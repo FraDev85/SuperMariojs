@@ -1,45 +1,45 @@
 import { loadLevel } from "./loader.js";
-import { loadMarioSprite, loadBackgroundSprites } from "./sprite.js";
+import { loadBackgroundSprites } from "./sprite.js";
+import Timer from "./timer.js";
 import Compositor from "./compositor.js";
-import { createBackgroundLayers } from "./layers.js";
-
-function createSpriteLayer(sprite, position) {
-  return function drawSpriteLayer(ctx) {
-    for (let i = 0; i < 15; ++i) {
-      sprite.draw("idle", ctx, position.x * i * 16, position.y);
-    }
-  };
-}
+import { createBackgroundLayers, createSpriteLayer } from "./layers.js";
+import { createMario } from "./Entities.js";
 
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
 
-Promise.all([
-  loadBackgroundSprites(),
-  loadLevel("1-1"),
-  loadMarioSprite(),
-]).then(([backgroundSprites, Level, marioSprite]) => {
-  const backgroundLayer = createBackgroundLayers(
-    Level.backgrounds,
-    backgroundSprites
-  );
-  const comp = new Compositor();
-  comp.push(backgroundLayer);
+Promise.all([loadBackgroundSprites(), loadLevel("1-1"), createMario()]).then(
+  ([backgroundSprites, level, mario]) => {
+    const backgroundLayer = createBackgroundLayers(
+      level.backgrounds,
+      backgroundSprites
+    );
+    const comp = new Compositor();
+    comp.push(backgroundLayer);
 
-  const position = {
-    x: 0,
-    y: 0,
-  };
+    mario.position.set(45, 175);
+    mario.velocity.set(3, 0);
 
-  const spriteLayer = createSpriteLayer(marioSprite, position);
-  comp.layers.push(spriteLayer);
+    const spriteLayer = createSpriteLayer(mario);
+    comp.layers.push(spriteLayer);
 
-  function update() {
-    comp.draw(ctx);
-    position.x++;
-    position.y++;
-    requestAnimationFrame(update);
+    const dtime = 1 / 60;
+    const timer = new Timer(1 / 60);
+
+    timer.update = function updateLogic(dtime) {
+      mario.update(dtime);
+    };
+    function render() {
+      comp.draw(ctx);
+    }
+
+    function gameLoop(time) {
+      timer.update(dtime);
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    timer.start();
+    requestAnimationFrame(gameLoop);
   }
-
-  update();
-});
+);

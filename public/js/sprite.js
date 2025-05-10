@@ -3,7 +3,7 @@ import SpriteSheet from "./spriteSheet.js";
 
 export async function loadMarioSprite() {
   const image = await loadImage("/img/sprites.png");
-  const sprites = new SpriteSheet(image, 27, 27);
+  const sprites = new SpriteSheet(image, 16, 16);
   sprites.define("idle", 0, 88, 16, 16);
   return sprites;
 }

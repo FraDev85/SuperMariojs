@@ -8,6 +8,12 @@ export function drawBackground(background, ctx, sprites) {
   });
 }
 
+export function createSpriteLayer(entity) {
+  return function drawSpriteLayer(ctx) {
+    entity.draw(ctx);
+  };
+}
+
 export function createBackgroundLayers(backgrounds, sprites) {
   const buffer = document.createElement("canvas");
   buffer.width = 260;
