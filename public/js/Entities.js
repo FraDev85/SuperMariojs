@@ -1,26 +1,24 @@
+// src/Entities.js
+
 import Entity from "./entity.js";
+import Velocity from "./traits/velocity.js";
+import Jump from "./traits/jump.js";
 import { loadMarioSprite } from "./sprite.js";
+import Gravity from "./traits/gravity.js";
 
-export function createMario() {
-  return loadMarioSprite().then((sprites) => {
-    const mario = new Entity();
+export async function createMario() {
+  const sprites = await loadMarioSprite();
 
-    mario.draw = function drawMario(ctx) {
-      sprites.draw("idle", ctx, this.position.x, this.position.y);
-    };
+  const mario = new Entity();
 
-    mario.update = function updateMario(dtime) {
-      const gravity = 3;
-      this.velocity.y += gravity * dtime;
-      this.position.x += this.velocity.x * dtime;
-      this.position.y += this.velocity.y * dtime;
-      // Gravità
-      if (mario.position.y > 175) {
-        mario.position.y = 175; // Assicura che Mario non scenda sotto il suolo
-        mario.velocity.y = 0; // Ferma la velocità verticale
-      }
-    };
+  mario.draw = function drawMario(ctx) {
+    sprites.draw("idle", ctx, this.position.x, this.position.y);
+    console.log("Available sprite keys:", Object.keys(sprites.frames || {}));
+  };
 
-    return mario;
-  });
+  mario.addTrait(new Velocity());
+  mario.addTrait(new Jump());
+  mario.addTrait(new Gravity());
+
+  return mario;
 }
