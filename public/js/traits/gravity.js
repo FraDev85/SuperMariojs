@@ -1,19 +1,18 @@
-import { Trait } from "../entity.js";
+import Trait from "./trait.js";
 
 export default class Gravity extends Trait {
   constructor() {
     super("gravity");
-    this.force = 400; // Forza di gravità
+    this.gravity = 500; // px/sec²
   }
 
   update(entity, dtime) {
-    // Applica sempre la gravità verso il basso
-    entity.velocity.y += this.force * dtime;
+    entity.velocity.y += this.gravity * dtime;
 
-    // Impedisci che Mario cada sotto il livello del suolo (175 è la sua posizione iniziale)
+    // semplice pavimento
     if (entity.position.y > 175) {
       entity.position.y = 175;
-      entity.velocity.y = 0; // Ferma la caduta quando tocca il suolo
+      entity.velocity.y = 0;
     }
   }
 }

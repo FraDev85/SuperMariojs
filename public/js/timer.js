@@ -4,9 +4,11 @@ export default class Timer {
     let ltime = 0;
 
     this.updateProxy = (time) => {
+      if (ltime === 0) ltime = time;
+
       accTime += (time - ltime) / 1000;
       while (accTime > dtime) {
-        this.update(dtime); // Fixed this line
+        this.update(dtime);
         accTime -= dtime;
       }
 

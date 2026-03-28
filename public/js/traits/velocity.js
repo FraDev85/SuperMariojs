@@ -1,11 +1,11 @@
-import { Trait } from "../entity.js";
+import Trait from "./trait.js";
 
 export default class Velocity extends Trait {
   constructor() {
-    super("velocityTrait"); // Cambia nome per evitare conflitto con entity.velocity
+    super("velocity");
   }
+
   update(entity, dtime) {
-    entity.position.x += entity.velocity.x * dtime;
-    entity.position.y += entity.velocity.y * dtime;
+    // contiene velocity.x / velocity.y, puoi aggiungere attrito se vuoi
   }
 }

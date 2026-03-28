@@ -1,25 +1,26 @@
-import { Trait } from "../entity.js";
+import Trait from "./trait.js";
 
 export default class Jump extends Trait {
   constructor() {
     super("jump");
-    this.duration = 0.5;
-    this.velocity = -200; // Negativo per andare verso l'alto
-    this.engageTime = 0;
+    this.jumpSpeed = -250;
+    this.isJumping = false;
   }
 
-  start() {
-    this.engageTime = this.duration;
+  start(entity) {
+    if (!this.isJumping && entity.position.y >= 175) {
+      entity.velocity.y = this.jumpSpeed;
+      this.isJumping = true;
+    }
   }
 
   cancel() {
-    this.engageTime = 0;
+    this.isJumping = false;
   }
 
   update(entity, dtime) {
-    if (this.engageTime > 0) {
-      entity.velocity.y = this.velocity; // Imposta velocità verso l'alto
-      this.engageTime -= dtime;
+    if (entity.position.y >= 175) {
+      this.isJumping = false;
     }
   }
 }

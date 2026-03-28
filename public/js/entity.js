@@ -1,13 +1,9 @@
 import Coordinate from "./coordinate.js";
-
-export class Trait {
-  constructor(name) {
-    this.NAME = name;
-  }
-  update() {
-    console.warn("update unhandling errors call in treats");
-  }
-}
+import Velocity from "./traits/velocity.js";
+import VelocityMovement from "./traits/velocityMovement.js";
+import Jump from "./traits/jump.js";
+import Gravity from "./traits/gravity.js";
+import { loadMarioSprite } from "./sprite.js";
 
 export default class Entity {
   constructor() {
@@ -18,15 +14,28 @@ export default class Entity {
 
   addTrait(trait) {
     this.traits.push(trait);
-    // Cambia il nome per evitare conflitti con le proprietà esistenti
-    // Usa un nome diverso o un prefixo per i traits
-    const traitName = trait.NAME === "velocity" ? "velocityTrait" : trait.NAME;
-    this[traitName] = trait;
+    this[trait.NAME] = trait;
   }
 
   update(dtime) {
     this.traits.forEach((trait) => {
-      trait.update(this, dtime);
+      if (trait.update) trait.update(this, dtime);
     });
   }
+}
+
+export async function createMario() {
+  const sprites = await loadMarioSprite();
+  const mario = new Entity();
+
+  mario.draw = function (ctx) {
+    sprites.draw("idle", ctx, this.position.x, this.position.y);
+  };
+
+  mario.addTrait(new Velocity());
+  mario.addTrait(new VelocityMovement());
+  mario.addTrait(new Gravity());
+  mario.addTrait(new Jump());
+
+  return mario;
 }
