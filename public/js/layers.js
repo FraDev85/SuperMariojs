@@ -19,3 +19,19 @@ export function createBackgroundLayers(level, sprites) {
     ctx.drawImage(buffer, 0, 0);
   };
 }
+
+export function createCameraLayer(entities) {
+  return function drawCameraLayer(ctx) {
+    entities.forEach((entity) => {
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+
+      ctx.strokeRect(
+        entity.position.x,
+        entity.position.y,
+        entity.size.x,
+        entity.size.y,
+      );
+    });
+  };
+}

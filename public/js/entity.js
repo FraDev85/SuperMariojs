@@ -9,6 +9,7 @@ export default class Entity {
   constructor() {
     this.position = new Coordinate(0, 0);
     this.velocity = new Coordinate(0, 0);
+    this.size = new Coordinate(16, 16);
     this.traits = [];
   }
 
