@@ -23,9 +23,9 @@ export function createBackgroundLayers(level, sprites) {
 export function createCameraLayer(entities) {
   return function drawCameraLayer(ctx) {
     entities.forEach((entity) => {
+      if (!entity.position || !entity.size) return;
       ctx.strokeStyle = "red";
       ctx.lineWidth = 2;
-
       ctx.strokeRect(
         entity.position.x,
         entity.position.y,
