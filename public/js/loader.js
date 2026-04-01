@@ -23,9 +23,9 @@ export async function loadBackgroundSprites(tileSize = 16) {
 
   // mappa dei tile: nome -> [colonna, riga]
   const tileMap = {
-    sky: [10, 7], // colonna 10, riga 7
-    ground: [0, 0], // esempio: prima tile in alto a sinistra
-    platform: [2, 0], // esempio: terzo tile in alto
+    sky: [10, 7],
+    ground: [0, 0],
+    platform: [2, 0],
   };
 
   const sprites = {};
@@ -74,16 +74,12 @@ function createTiles(level, backgrounds) {
   });
 }
 
-/**
- * Carica livello completo
- */
 export async function loadLevel(name) {
   const res = await fetch(`/levels/${name}.json`);
   const levelSpec = await res.json();
 
   const level = new Level();
 
-  // carica sprite con posizione personalizzata per ogni tile
   level.backgroundSprites = await loadBackgroundSprites();
 
   createTiles(level, levelSpec.backgrounds);
