@@ -18,23 +18,23 @@ const RIGHT = 39;
 const JUMP = 32;
 
 async function main() {
-  // 🎯 1. Crea Mario
+  // ── 1. Entità ──────────────────────────────────────────────────────
   const mario = await createMario();
 
-  // 🎯 2. Carica il livello
-  const level = await loadLevel("1-1"); // carica tiles, collider e backgroundSprites
+  // ── 2. Livello ─────────────────────────────────────────────────────
+  const level = await loadLevel("1-1");
 
-  // Posizione iniziale di Mario
   mario.setPosition(45, 174);
   level.entities.add(mario);
 
-  // Dimensioni del livello in pixel
   const { width: levelWidth, height: levelHeight } = level.getSize(16);
 
-  // 🎯 3. Crea la camera
+  // ── 3. Camera ──────────────────────────────────────────────────────
   const camera = new Camera(mario, levelWidth, levelHeight);
+  camera.snap(canvas.width);
+  let cameraLeftBound = camera.position.x;
 
-  // 🎯 4. Crea i layer dopo la camera
+  // ── 4. Layer ───────────────────────────────────────────────────────
   const backgroundLayer = createBackgroundLayers(
     level,
     level.backgroundSprites,
@@ -47,7 +47,7 @@ async function main() {
   const cameraDebugLayer = createCameraLayer(level.entities);
   level.comp.layers.push((ctx) => cameraDebugLayer(ctx, camera));
 
-  // 🎮 5. Gestione input
+  // ── 5. Input ───────────────────────────────────────────────────────
   const keyboard = new KeyboardState();
   keyboard.addMapping(LEFT, () => {});
   keyboard.addMapping(RIGHT, () => {});
@@ -66,34 +66,70 @@ async function main() {
     else mario.velocity.x = 0;
   }
 
-  // 🎨 Render
-  function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // ── 6. Bounds ──────────────────────────────────────────────────────
+  function applyBounds() {
+    if (mario.position.x < cameraLeftBound) {
+      mario.position.x = cameraLeftBound;
+      if (mario.velocity.x < 0) mario.velocity.x = 0;
+    }
 
-    // Disegna tutti i layer con la camera
-    level.comp.layers.forEach((layer) => layer(ctx));
+    const rightBound = levelWidth - mario.size.x;
+    if (mario.position.x > rightBound) {
+      mario.position.x = rightBound;
+      if (mario.velocity.x > 0) mario.velocity.x = 0;
+    }
   }
 
-  // ⏱️ Game loop
+  // ── 7. Render ──────────────────────────────────────────────────────
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    level.comp.layers.forEach((layer) => layer(ctx));
+
+    // overlay debug
+    ctx.save();
+    ctx.font = "10px monospace";
+    ctx.fillStyle = "white";
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 4;
+
+    [
+      `mario.x:    ${mario.position.x.toFixed(1)}`,
+      `mario.y:    ${mario.position.y.toFixed(1)}`,
+      `vel.x:      ${mario.velocity.x.toFixed(1)}`,
+      `vel.y:      ${mario.velocity.y.toFixed(1)}`,
+      `camera.x:   ${camera.position.x.toFixed(1)}`,
+      `leftBound:  ${cameraLeftBound.toFixed(1)}`,
+      `onGround:   ${mario.jump?.onGround}`,
+    ].forEach((line, i) => ctx.fillText(line, 8, 14 + i * 14));
+
+    ctx.restore();
+  }
+
+  // ── 8. Game loop ───────────────────────────────────────────────────
   const timer = new Timer(1 / 60);
+
   timer.update = (deltaTime) => {
     handleInput();
     level.update(deltaTime);
 
-    // risolvi collisioni per ogni entità
     level.entities.forEach((entity) => {
       level.tileCollider.checkX(entity);
 
       const prevVelY = entity.velocity.y;
       level.tileCollider.checkY(entity);
 
-      // se checkY ha azzerato velocity.y cadendo, Mario è a terra
       if (prevVelY > 0 && entity.velocity.y === 0) {
         if (entity.jump) entity.jump.onGround = true;
       }
     });
 
+    // camera
     camera.update(canvas.width, canvas.height);
+    cameraLeftBound = Math.max(cameraLeftBound, camera.position.x);
+
+    // bounds Mario
+    applyBounds();
+
     render();
   };
 
