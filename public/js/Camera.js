@@ -7,15 +7,27 @@ export default class Camera {
     this.target = target;
     this.levelWidth = levelWidth;
     this.levelHeight = levelHeight;
+
+    this.lastTargetX = target.position.x;
   }
 
   update(canvasWidth, canvasHeight) {
     if (!this.target || isNaN(this.target.position.x)) return;
 
-    const maxX = Math.max(this.levelWidth - canvasWidth, 0);
-    const targetX = this.target.position.x - canvasWidth / 2;
+    // delta reale di posizione (smooth look-ahead)
+    const lookAhead = (this.target.position.x - this.lastTargetX) * 5;
+    this.lastTargetX = this.target.position.x;
 
-    this.position.x = Math.max(0, Math.min(targetX, maxX));
-    this.position.y = 0; // verticale fisso
+    const targetX = this.target.position.x + lookAhead - canvasWidth / 2;
+
+    // interpolazione fluida (lerp)
+    this.position.x += (targetX - this.position.x) * 0.1;
+
+    // clamp della camera all'interno del livello
+    const maxX = Math.max(this.levelWidth - canvasWidth, 0);
+    this.position.x = Math.max(0, Math.min(this.position.x, maxX));
+
+    // opzione verticale fissa (puoi cambiare se vuoi seguire y)
+    this.position.y = 0;
   }
 }

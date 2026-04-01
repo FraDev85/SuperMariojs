@@ -1,52 +1,94 @@
-import { createBackgroundLayers, createSpriteLayer } from "./layers.js";
 import Level from "./level.js";
-import { loadBackgroundSprites } from "./sprite.js";
 import TileCollider from "./tileCollider.js";
-import { createCameraLayer } from "./layers.js";
 
+/**
+ * Carica un'immagine
+ */
 export function loadImage(url) {
-  return new Promise((resolve) => {
-    const image = new Image();
-    image.addEventListener("load", () => {
-      resolve(image);
-    });
-    image.src = url;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.addEventListener("load", () => resolve(img));
+    img.addEventListener("error", reject);
+    img.src = url;
   });
 }
 
+/**
+ * Carica spritesheet e mappa tile
+ * tileSize: dimensione di ogni tile (16px)
+ * tileMap: { nome: [col, row] }
+ */
+export async function loadBackgroundSprites(tileSize = 16) {
+  const image = await loadImage("/img/tiles.png"); // path corretto
+
+  // mappa dei tile: nome -> [colonna, riga]
+  const tileMap = {
+    sky: [10, 7], // colonna 10, riga 7
+    ground: [0, 0], // esempio: prima tile in alto a sinistra
+    platform: [2, 0], // esempio: terzo tile in alto
+  };
+
+  const sprites = {};
+
+  for (const [name, [col, row]] of Object.entries(tileMap)) {
+    sprites[name] = {
+      image,
+      sx: col * tileSize,
+      sy: row * tileSize,
+      sw: tileSize,
+      sh: tileSize,
+    };
+  }
+
+  return {
+    drawTile(name, ctx, x, y) {
+      const tile = sprites[name];
+      if (!tile) return;
+      ctx.drawImage(
+        tile.image,
+        tile.sx,
+        tile.sy,
+        tile.sw,
+        tile.sh,
+        x,
+        y,
+        tile.sw,
+        tile.sh,
+      );
+    },
+  };
+}
+
+/**
+ * Popola le tiles nel livello
+ */
 function createTiles(level, backgrounds) {
-  backgrounds.forEach((background) => {
-    background.ranges.forEach(([x1, x2, y1, y2]) => {
-      for (let x = x1; x < x2; ++x) {
-        for (let y = y1; y < y2; ++y) {
-          level.tiles.set(x, y, {
-            name: background.tile,
-          });
+  backgrounds.forEach((bg) => {
+    bg.ranges.forEach(([x1, x2, y1, y2]) => {
+      for (let x = x1; x < x2; x++) {
+        for (let y = y1; y < y2; y++) {
+          level.tiles.set(x, y, { name: bg.tile });
         }
       }
     });
   });
 }
 
-export function loadLevel(name) {
-  return Promise.all([
-    fetch(`/levels/${name}.json`).then((r) => r.json()),
-    loadBackgroundSprites(),
-  ]).then(([levelSpec, backgroundSprites]) => {
-    const level = new Level();
+/**
+ * Carica livello completo
+ */
+export async function loadLevel(name) {
+  const res = await fetch(`/levels/${name}.json`);
+  const levelSpec = await res.json();
 
-    createTiles(level, levelSpec.backgrounds);
+  const level = new Level();
 
-    // ✅ QUI CREI IL COLLIDER
-    level.tileCollider = new TileCollider(level.tiles);
+  // carica sprite con posizione personalizzata per ogni tile
+  level.backgroundSprites = await loadBackgroundSprites();
 
-    const backgroundLayer = createBackgroundLayers(level, backgroundSprites);
-    level.comp.layers.push(backgroundLayer);
+  createTiles(level, levelSpec.backgrounds);
 
-    const spriteLayer = createSpriteLayer(level.entities);
-    level.comp.layers.push(spriteLayer);
-    level.comp.layers.push(createCameraLayer(level.entities));
+  level.tileCollider = new TileCollider(level.tiles);
 
-    return level;
-  });
+  return level;
 }
