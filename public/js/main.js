@@ -76,12 +76,25 @@ async function main() {
 
   // ⏱️ Game loop
   const timer = new Timer(1 / 60);
-
   timer.update = (deltaTime) => {
-    handleInput(); // input Mario
-    level.update(deltaTime); // aggiorna entità
-    camera.update(canvas.width, canvas.height); // camera segue Mario
-    render(); // disegna tutto
+    handleInput();
+    level.update(deltaTime);
+
+    // risolvi collisioni per ogni entità
+    level.entities.forEach((entity) => {
+      level.tileCollider.checkX(entity);
+
+      const prevVelY = entity.velocity.y;
+      level.tileCollider.checkY(entity);
+
+      // se checkY ha azzerato velocity.y cadendo, Mario è a terra
+      if (prevVelY > 0 && entity.velocity.y === 0) {
+        if (entity.jump) entity.jump.onGround = true;
+      }
+    });
+
+    camera.update(canvas.width, canvas.height);
+    render();
   };
 
   timer.start();
