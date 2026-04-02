@@ -1,9 +1,6 @@
 import Level from "./level.js";
 import TileCollider from "./tileCollider.js";
 
-/**
- * Carica un'immagine
- */
 export function loadImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
