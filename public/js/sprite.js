@@ -4,24 +4,33 @@ import SpriteSheet from "./spriteSheet.js";
 export async function loadMarioSprite() {
   const image = await loadImage("/img/sprites.png");
   const sprites = new SpriteSheet(image, 16, 16);
-  sprites.define("idle", 0, 88, 16, 16);
+
+  // ── Mario small (riga 5, y=88) ────────────────────────────────────
+  sprites.define("small/idle", 0, 88, 16, 16);
+  sprites.define("small/walk1", 16, 88, 16, 16);
+  sprites.define("small/walk2", 32, 88, 16, 16);
+  sprites.define("small/walk3", 48, 88, 16, 16);
+  sprites.define("small/jump", 64, 88, 16, 16);
+  sprites.define("small/skid", 80, 88, 16, 16);
+
+  // ── Mario big (riga 6-7, y=96, sprite 16x32) ─────────────────────
+  sprites.define("big/idle", 0, 96, 16, 32);
+  sprites.define("big/walk1", 16, 96, 16, 32);
+  sprites.define("big/walk2", 32, 96, 16, 32);
+  sprites.define("big/walk3", 48, 96, 16, 32);
+  sprites.define("big/jump", 64, 96, 16, 32);
+  sprites.define("big/skid", 80, 96, 16, 32);
+
   return sprites;
 }
 
 export async function loadBackgroundSprites() {
-  // Carica l'immagine delle tiles
   const image = await loadImage("/img/tiles.png");
-
-  // Ogni tile è 16x16
   const sprites = new SpriteSheet(image, 16, 16);
 
-  // Definisci tutte le tile che userai
-  sprites.defineTile("ground", 0, 0); // coord X=0, Y=0 nella spritesheet
-  sprites.defineTile("sky", 10, 7); // coord X=10, Y=7 nella spritesheet
-  sprites.defineTile("platform", 2, 3); // coord X=2, Y=3 nella spritesheet
-
-  // Stampa per debug: quali tile sono pronte
-  console.log("Tile definite:", [...sprites.tiles.keys()]);
+  sprites.defineTile("ground", 0, 0);
+  sprites.defineTile("sky", 10, 7);
+  sprites.defineTile("platform", 2, 3);
 
   return sprites;
 }

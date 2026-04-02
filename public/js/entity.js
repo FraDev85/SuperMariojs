@@ -1,22 +1,10 @@
 // entity.js
 import { loadMarioSprite } from "./sprite.js";
+import Animator from "./animator.js";
 import Velocity from "./traits/velocity.js";
 import VelocityMovement from "./traits/velocityMovement.js";
 import Gravity from "./traits/gravity.js";
 import Jump from "./traits/jump.js";
-
-// Classe semplice per rappresentare posizione
-class Vec2 {
-  constructor(x = 0, y = 0) {
-    this.x = x;
-    this.y = y;
-  }
-
-  set(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-}
 
 export default class Entity {
   constructor() {
@@ -41,29 +29,64 @@ export default class Entity {
   }
 }
 
-// Funzione di creazione di Mario
 export async function createMario() {
   const sprites = await loadMarioSprite();
   const mario = new Entity();
 
-  // draw
+  const walkAnim = new Animator(
+    ["small/walk1", "small/walk2", "small/walk3"],
+    0.1, // secondi per frame
+  );
+
+  function resolveSprite(deltaTime) {
+    // In aria
+    if (!mario.jump.onGround) {
+      walkAnim.reset();
+      return "small/jump";
+    }
+
+    const isSkidding =
+      (mario.velocity.x > 0 && mario.facing === -1) ||
+      (mario.velocity.x < 0 && mario.facing === 1);
+
+    if (isSkidding) {
+      walkAnim.reset();
+      return "small/skid";
+    }
+
+    if (mario.velocity.x !== 0) {
+      return walkAnim.frame(deltaTime);
+    }
+
+    walkAnim.reset();
+    return "small/idle";
+  }
+
+  mario.lastDeltaTime = 0;
+
   mario.draw = function (ctx) {
-    sprites.draw("idle", ctx, this.position.x, this.position.y);
+    const spriteName = resolveSprite(mario.lastDeltaTime);
+
+    ctx.save();
+
+    if (mario.facing === -1) {
+      ctx.scale(-1, 1);
+      ctx.translate(-mario.position.x * 2 - mario.size.x, 0);
+    }
+
+    sprites.draw(spriteName, ctx, mario.position.x, mario.position.y);
+    ctx.restore();
   };
 
-  // traits
-  const velocity = new Velocity();
-  const velocityMovement = new VelocityMovement();
-  const gravity = new Gravity();
+  mario.addTrait(new Velocity());
+  mario.addTrait(new VelocityMovement());
+  mario.addTrait(new Gravity());
+
   const jump = new Jump();
-
-  mario.addTrait(velocity);
-  mario.addTrait(velocityMovement);
-  mario.addTrait(gravity);
   mario.addTrait(jump);
-
-  // assegna jump come proprietà per usarlo nel main
   mario.jump = jump;
+
+  mario.facing = 1; // 1 = destra, -1 = sinistra
 
   return mario;
 }

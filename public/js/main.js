@@ -61,9 +61,15 @@ async function main() {
     const left = keyboard.keyStates.get(LEFT) === 1;
     const right = keyboard.keyStates.get(RIGHT) === 1;
 
-    if (left && !right) mario.velocity.x = -100;
-    else if (right && !left) mario.velocity.x = 100;
-    else mario.velocity.x = 0;
+    if (left && !right) {
+      mario.velocity.x = -100;
+      mario.facing = -1;
+    } else if (right && !left) {
+      mario.velocity.x = 100;
+      mario.facing = 1;
+    } else {
+      mario.velocity.x = 0;
+    }
   }
 
   // ── 6. Bounds ──────────────────────────────────────────────────────
@@ -84,25 +90,6 @@ async function main() {
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     level.comp.layers.forEach((layer) => layer(ctx));
-
-    // overlay debug
-    ctx.save();
-    ctx.font = "10px monospace";
-    ctx.fillStyle = "white";
-    ctx.shadowColor = "black";
-    ctx.shadowBlur = 4;
-
-    [
-      `mario.x:    ${mario.position.x.toFixed(1)}`,
-      `mario.y:    ${mario.position.y.toFixed(1)}`,
-      `vel.x:      ${mario.velocity.x.toFixed(1)}`,
-      `vel.y:      ${mario.velocity.y.toFixed(1)}`,
-      `camera.x:   ${camera.position.x.toFixed(1)}`,
-      `leftBound:  ${cameraLeftBound.toFixed(1)}`,
-      `onGround:   ${mario.jump?.onGround}`,
-    ].forEach((line, i) => ctx.fillText(line, 8, 14 + i * 14));
-
-    ctx.restore();
   }
 
   // ── 8. Game loop ───────────────────────────────────────────────────
@@ -110,8 +97,13 @@ async function main() {
 
   timer.update = (deltaTime) => {
     handleInput();
+
+    // passa deltaTime al draw per l'animazione
+    mario.lastDeltaTime = deltaTime;
+
     level.update(deltaTime);
 
+    // collisioni
     level.entities.forEach((entity) => {
       level.tileCollider.checkX(entity);
 
