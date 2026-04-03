@@ -1,107 +1,119 @@
-// tileCollider.js
 export default class TileCollider {
   constructor(matrix, tileSize = 16) {
-    this.tiles = matrix; // istanza di Matrix da math.js
+    this.tiles = matrix;
     this.tileSize = tileSize;
   }
 
-  // Converte una coordinata pixel → indice tile
   toIndex(pos) {
     return Math.floor(pos / this.tileSize);
   }
 
-  // Restituisce la tile a coordinate tile (x, y) usando l'API di Matrix
-  getTileByIndex(tileX, tileY) {
-    return this.tiles.get(tileX, tileY) || null;
+  getTileByIndex(x, y) {
+    return this.tiles.get(x, y) || null;
   }
 
-  // Restituisce la tile a coordinate pixel (x, y)
-  getTile(px, py) {
-    return this.getTileByIndex(this.toIndex(px), this.toIndex(py));
+  _isSolid(tile) {
+    return tile && tile.name !== "sky";
   }
 
-  // -------------------------------------------------------------------
-  // Controllo collisione orizzontale (left / right)
-  // -------------------------------------------------------------------
+  // ─────────────────────────────────────────
+  // COLLISIONE ORIZZONTALE
+  // ─────────────────────────────────────────
   checkX(entity) {
     const { x, y } = entity.position;
     const { x: w, y: h } = entity.size;
 
-    // Bordo sinistro
-    this._checkColumn(x, y, h, entity, "left");
-    // Bordo destro
-    this._checkColumn(x + w, y, h, entity, "right");
+    if (entity.velocity.x > 0) {
+      // → destra
+      this._checkColumn(entity, x + w, y, h, "right");
+    } else if (entity.velocity.x < 0) {
+      // ← sinistra
+      this._checkColumn(entity, x, y, h, "left");
+    }
   }
 
-  // -------------------------------------------------------------------
-  // Controllo collisione verticale (top / bottom)
-  // -------------------------------------------------------------------
+  _checkColumn(entity, px, py, height, side) {
+    const tileX = this.toIndex(px);
+    const yStart = this.toIndex(py);
+    const yEnd = this.toIndex(py + height - 1);
+
+    for (let tileY = yStart; tileY <= yEnd; tileY++) {
+      const tile = this.getTileByIndex(tileX, tileY);
+      if (!this._isSolid(tile)) continue;
+
+      this._resolveX(entity, tileX, side);
+      return;
+    }
+  }
+
+  _resolveX(entity, tileX, side) {
+    if (side === "left") {
+      entity.position.x = (tileX + 1) * this.tileSize;
+    } else {
+      entity.position.x = tileX * this.tileSize - entity.size.x;
+    }
+
+    entity.velocity.x = 0;
+  }
+
+  // ─────────────────────────────────────────
+  // COLLISIONE VERTICALE
+  // ─────────────────────────────────────────
   checkY(entity) {
     const { x, y } = entity.position;
     const { x: w, y: h } = entity.size;
 
-    // Bordo superiore
-    this._checkRow(x, y, w, entity, "top");
-    // Bordo inferiore
-    this._checkRow(x, y + h, w, entity, "bottom");
-  }
-
-  // -------------------------------------------------------------------
-  // Privati: scansiona una colonna o riga di tile
-  // -------------------------------------------------------------------
-
-  _checkColumn(px, py, height, entity, side) {
-    const tileX = this.toIndex(px);
-    const tileYStart = this.toIndex(py);
-    const tileYEnd = this.toIndex(py + height - 1);
-
-    for (let tileY = tileYStart; tileY <= tileYEnd; tileY++) {
-      const tile = this.getTileByIndex(tileX, tileY);
-      if (tile && tile.name !== "sky") {
-        this._resolveX(entity, tileX, side);
-        break;
-      }
+    if (entity.velocity.y > 0) {
+      // ↓ sta cadendo
+      this._checkRow(entity, x, y + h, w, "bottom");
+    } else if (entity.velocity.y < 0) {
+      // ↑ sta salendo
+      this._checkRow(entity, x, y, w, "top");
     }
   }
 
-  _checkRow(px, py, width, entity, side) {
+  _checkRow(entity, px, py, width, side) {
     const tileY = this.toIndex(py);
-    const tileXStart = this.toIndex(px);
-    const tileXEnd = this.toIndex(px + width - 1);
+    const xStart = this.toIndex(px);
+    const xEnd = this.toIndex(px + width - 1);
 
-    for (let tileX = tileXStart; tileX <= tileXEnd; tileX++) {
+    for (let tileX = xStart; tileX <= xEnd; tileX++) {
       const tile = this.getTileByIndex(tileX, tileY);
-      if (tile && tile.name !== "sky") {
-        this._resolveY(entity, tileY, side);
-        break;
+      if (!this._isSolid(tile)) continue;
+
+      // 🎯 HIT DA SOTTO (question block)
+      if (
+        side === "top" &&
+        entity.velocity.y < 0 &&
+        tile.block &&
+        !tile.block.hit
+      ) {
+        tile.block.hit = true;
+        tile.block.triggerBump();
+
+        // piccolo rimbalzo (feeling Mario)
+        entity.velocity.y = 20;
       }
-    }
-  }
 
-  // -------------------------------------------------------------------
-  // Risoluzione: sposta l'entità fuori dalla tile
-  // -------------------------------------------------------------------
-
-  _resolveX(entity, tileX, side) {
-    if (side === "left") {
-      // l'entità stava andando a sinistra: mettila sul bordo destro della tile
-      entity.position.x = (tileX + 1) * this.tileSize;
-      entity.velocity.x = 0;
-    } else {
-      // l'entità stava andando a destra: mettila sul bordo sinistro della tile
-      entity.position.x = tileX * this.tileSize - entity.size.x;
-      entity.velocity.x = 0;
+      this._resolveY(entity, tileY, side);
+      return tile;
     }
+
+    return null;
   }
 
   _resolveY(entity, tileY, side) {
     if (side === "top") {
+      // colpo da sotto
       entity.position.y = (tileY + 1) * this.tileSize;
-      entity.velocity.y = 0;
     } else {
-      // atterraggio: appoggia l'entità sulla superficie della tile
+      // atterraggio sopra
       entity.position.y = tileY * this.tileSize - entity.size.y;
-      entity.velocity.y = 0;
+
+      // opzionale: stato a terra
+      entity.onGround = true;
     }
+
+    entity.velocity.y = 0;
   }
 }

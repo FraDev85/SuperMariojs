@@ -3,14 +3,16 @@ import Trait from "./trait.js";
 export default class Jump extends Trait {
   constructor() {
     super("jump");
-    this.jumpSpeed = 400;
+    this.jumpSpeed = 480;
     this.onGround = false;
+    this.isJumping = false;
   }
 
   start(entity) {
     if (!this.onGround) return;
     entity.velocity.y = -this.jumpSpeed;
     this.onGround = false;
+    this.isJumping = true;
   }
 
   cancel(entity) {

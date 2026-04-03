@@ -40,7 +40,7 @@ export async function createMario() {
 
   function resolveSprite(deltaTime) {
     // In aria
-    if (!mario.jump.onGround) {
+    if (!mario.jump.onGround || mario.jump.isJumping) {
       walkAnim.reset();
       return "small/jump";
     }
@@ -86,7 +86,6 @@ export async function createMario() {
   mario.addTrait(jump);
   mario.jump = jump;
 
-  mario.facing = 1; // 1 = destra, -1 = sinistra
-
+  mario.facing = 1;
   return mario;
 }

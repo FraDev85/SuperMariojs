@@ -16,6 +16,8 @@ export function createBackgroundLayers(level, sprites) {
       for (let y = startRow; y <= endRow; y++) {
         const tile = level.tiles.get(x, y);
         if (!tile) continue;
+        if (tile.name === "sky") continue;
+        if (tile.name === "questionBlock") continue;
 
         sprites.drawTile(
           tile.name,

@@ -13,6 +13,20 @@ import {
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
 
+// ── Risoluzione interna fissa (stile NES) ─────────────────────────
+// Il gioco gira sempre a 256×240, poi viene scalato al canvas reale.
+// Così il JSON non dipende mai dalla dimensione del canvas.
+const INTERNAL_WIDTH = 256;
+const INTERNAL_HEIGHT = 240;
+
+const scale = Math.min(
+  canvas.width / INTERNAL_WIDTH,
+  canvas.height / INTERNAL_HEIGHT,
+);
+
+// disabilita smoothing per mantenere i pixel nitidi
+ctx.imageSmoothingEnabled = false;
+
 const LEFT = 37;
 const RIGHT = 39;
 const JUMP = 32;
@@ -24,14 +38,16 @@ async function main() {
   // ── 2. Livello ─────────────────────────────────────────────────────
   const level = await loadLevel("1-1");
 
+  // posizione iniziale Mario — coordinate interne (256×240)
   mario.setPosition(45, 174);
   level.entities.add(mario);
 
   const { width: levelWidth, height: levelHeight } = level.getSize(16);
 
   // ── 3. Camera ──────────────────────────────────────────────────────
+  // la camera usa sempre la risoluzione interna, non quella del canvas
   const camera = new Camera(mario, levelWidth, levelHeight);
-  camera.snap(canvas.width);
+  camera.snap(INTERNAL_WIDTH);
   let cameraLeftBound = camera.position.x;
 
   // ── 4. Layer ───────────────────────────────────────────────────────
@@ -88,8 +104,21 @@ async function main() {
 
   // ── 7. Render ──────────────────────────────────────────────────────
   function render() {
+    // pulisci l'intero canvas reale
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // sfondo cielo
+    ctx.fillStyle = "#5C94FC";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // scala al canvas reale mantenendo pixel nitidi
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    // disegna tutti i layer nella risoluzione interna
     level.comp.layers.forEach((layer) => layer(ctx));
+
+    ctx.restore();
   }
 
   // ── 8. Game loop ───────────────────────────────────────────────────
@@ -98,30 +127,31 @@ async function main() {
   timer.update = (deltaTime) => {
     handleInput();
 
-    // passa deltaTime al draw per l'animazione
     mario.lastDeltaTime = deltaTime;
 
     level.update(deltaTime);
 
     // collisioni
     level.entities.forEach((entity) => {
+      if (entity.static) return;
       level.tileCollider.checkX(entity);
 
       const prevVelY = entity.velocity.y;
       level.tileCollider.checkY(entity);
 
       if (prevVelY > 0 && entity.velocity.y === 0) {
-        if (entity.jump) entity.jump.onGround = true;
+        if (entity.jump) {
+          entity.jump.onGround = true;
+          entity.jump.isJumping = false;
+        }
       }
     });
 
-    // camera
-    camera.update(canvas.width, canvas.height);
+    // camera — usa risoluzione interna
+    camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);
     cameraLeftBound = Math.max(cameraLeftBound, camera.position.x);
 
-    // bounds Mario
     applyBounds();
-
     render();
   };
 

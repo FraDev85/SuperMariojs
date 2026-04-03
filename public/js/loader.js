@@ -1,6 +1,9 @@
+// loader.js
 import Level from "./level.js";
 import TileCollider from "./tileCollider.js";
+import { createQuestionBlock } from "./questionBlock.js";
 
+// ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -10,15 +13,10 @@ export function loadImage(url) {
   });
 }
 
-/**
- * Carica spritesheet e mappa tile
- * tileSize: dimensione di ogni tile (16px)
- * tileMap: { nome: [col, row] }
- */
+// ── Carica background sprites ─────────────────────────────────────
 export async function loadBackgroundSprites(tileSize = 16) {
-  const image = await loadImage("/img/tiles.png"); // path corretto
+  const image = await loadImage("/img/tiles.png");
 
-  // mappa dei tile: nome -> [colonna, riga]
   const tileMap = {
     sky: [10, 7],
     ground: [0, 0],
@@ -26,7 +24,6 @@ export async function loadBackgroundSprites(tileSize = 16) {
   };
 
   const sprites = {};
-
   for (const [name, [col, row]] of Object.entries(tileMap)) {
     sprites[name] = {
       image,
@@ -56,9 +53,7 @@ export async function loadBackgroundSprites(tileSize = 16) {
   };
 }
 
-/**
- * Popola le tiles nel livello
- */
+// ── Popola tiles di sfondo ────────────────────────────────────────
 function createTiles(level, backgrounds) {
   backgrounds.forEach((bg) => {
     bg.ranges.forEach(([x1, x2, y1, y2]) => {
@@ -71,6 +66,31 @@ function createTiles(level, backgrounds) {
   });
 }
 
+// ── Carica entità dal JSON ────────────────────────────────────────
+async function createEntities(level, entities = []) {
+  for (const {
+    type,
+    position: [px, py],
+  } of entities) {
+    if (type === "questionBlock") {
+      const block = await createQuestionBlock();
+      block.setPosition(px, py);
+      level.entities.add(block);
+
+      // ✅ registra il blocco nella matrice tile
+      // così il tileCollider lo trova quando Mario lo colpisce dal basso
+      const tileX = Math.floor(px / 16);
+      const tileY = Math.floor(py / 16);
+      level.tiles.set(tileX, tileY, { name: "questionBlock", block });
+      const check = level.tiles.get(tileX, tileY);
+      console.log(`SET tileX:${tileX} tileY:${tileY} → GET:`, check?.name);
+    }
+
+    // qui in futuro: goomba, koopa, ecc.
+  }
+}
+
+// ── Carica livello ────────────────────────────────────────────────
 export async function loadLevel(name) {
   const res = await fetch(`/levels/${name}.json`);
   const levelSpec = await res.json();
@@ -80,6 +100,8 @@ export async function loadLevel(name) {
   level.backgroundSprites = await loadBackgroundSprites();
 
   createTiles(level, levelSpec.backgrounds);
+
+  await createEntities(level, levelSpec.entities);
 
   level.tileCollider = new TileCollider(level.tiles);
 
