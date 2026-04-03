@@ -1,4 +1,3 @@
-// main.js
 import { loadLevel } from "./loader.js";
 import Timer from "./timer.js";
 import { createMario } from "./entity.js";
@@ -9,7 +8,9 @@ import {
   createSpriteLayer,
   createCameraLayer,
 } from "./layers.js";
-import { checkCollision, loadCoinSprites, createCoin } from "./coin.js";
+
+import { checkCollision, loadCoinSprites } from "./coin.js";
+import CoinStable from "./coinStable.js";
 
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
@@ -20,6 +21,7 @@ const scale = Math.min(
   canvas.width / INTERNAL_WIDTH,
   canvas.height / INTERNAL_HEIGHT,
 );
+
 ctx.imageSmoothingEnabled = false;
 
 const LEFT = 37;
@@ -30,12 +32,21 @@ async function main() {
   // ── Entità ─────────────────────────────
   const mario = await createMario();
   const level = await loadLevel("1-1");
-  await loadCoinSprites(); // carica lo spritesheet delle monete
+  await loadCoinSprites();
 
   mario.setPosition(45, 174);
   level.entities.add(mario);
 
   const { width: levelWidth, height: levelHeight } = level.getSize(16);
+
+  // Monete libere sul background
+  const stableCoins = [
+    new CoinStable(80, 160),
+    new CoinStable(150, 120),
+    new CoinStable(200, 140),
+  ];
+
+  stableCoins.forEach((coin) => level.entities.add(coin));
 
   // ── Camera ─────────────────────────────
   const camera = new Camera(mario, levelWidth, levelHeight);
@@ -110,18 +121,20 @@ async function main() {
     handleInput();
     mario.lastDeltaTime = deltaTime;
 
-    // ── Aggiorna entità (safe copy) ─────────────────────
+    // Aggiorna tutte le entità
     for (const entity of Array.from(level.entities)) {
       if (entity.update) entity.update(deltaTime);
     }
+
+    // Spawna le monete dai blocchi
     for (const e of level.toSpawn) {
       level.entities.add(e);
     }
     level.toSpawn.length = 0;
 
-    // ── Collisioni, monete, bump ─────────
+    // ── Collisioni ─────────────────────────
     for (const entity of Array.from(level.entities)) {
-      // Collisioni con tile
+      // Collisione con tile
       if (
         entity.position &&
         entity.velocity &&
@@ -140,22 +153,19 @@ async function main() {
         }
       }
 
-      // RACCOLTA MONETE (solo se è una coin)
+      // Raccolta monete (sia Coin che CoinStable)
       if (entity.onCollect && checkCollision(mario, entity)) {
-        console.log("COLLISIONE MONETA"); // debug
-
+        console.log("COLLISIONE MONETA");
         entity.onCollect();
         level.entities.delete(entity);
-        continue;
       }
 
-      // Rimuovi monete scadute
+      // Rimuovi Coin con lifetime finita
       if (entity.isAlive && !entity.isAlive()) {
         level.entities.delete(entity);
       }
     }
 
-    // ── Camera ───────────────────────────
     camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);
     cameraLeftBound = Math.max(cameraLeftBound, camera.position.x);
 

@@ -2,7 +2,7 @@
 import { loadImage } from "./loader.js";
 import SpriteSheet from "./spriteSheet.js";
 import Animator from "./animator.js";
-import { createCoin } from "./coin.js";
+import Coin from "./coin.js";
 
 async function loadQuestionBlockSprites() {
   const image = await loadImage("/img/tiles.png");
@@ -32,28 +32,34 @@ export async function createQuestionBlock(level) {
     },
   };
 
-  // ── Bump ─────────────────────────────────────────────────────────
+  // ── Bump ──────────────────────────────
   let bumpOffset = 0;
   let bumpVelocity = 0;
   let isBumping = false;
 
-  block.triggerBump = function (level) {
+  block.triggerBump = function () {
     if (block.hit) return;
 
     console.log("Trigger bump");
 
-    const coin = createCoin(block.position.x, block.position.y - 16);
-    level.toSpawn.push(coin);
+    // Creazione moneta
+    const coin = new Coin(block.position.x, block.position.y - 16);
+    if (level && level.toSpawn) {
+      level.toSpawn.push(coin);
+    } else {
+      console.warn("Level o level.toSpawn non definito");
+    }
 
+    // Suono alla comparsa
     coin.onCollect();
 
     block.hit = true;
   };
-  // ── Animatore ────────────────────────────────────────────────────
+
+  // ── Animatore ─────────────────────────
   const anim = new Animator(["q1", "q2", "q3"], 0.2);
   let animTime = 0;
 
-  // ── Update ───────────────────────────────────────────────────────
   block.update = function (deltaTime) {
     if (!block.hit) animTime += deltaTime;
 
@@ -69,7 +75,7 @@ export async function createQuestionBlock(level) {
     }
   };
 
-  // ── Draw ─────────────────────────────────────────────────────────
+  // ── Draw ──────────────────────────────
   block.draw = function (ctx) {
     const frameNames = ["q1", "q2", "q3"];
     const frame = block.hit
