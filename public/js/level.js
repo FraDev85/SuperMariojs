@@ -8,14 +8,10 @@ export default class Level {
     this.entities = new Set(); // entità come Mario, nemici, ecc.
     this.tiles = new Matrix(); // matrice delle tile (popolata dal loader)
     this.tileCollider = null; // collider impostato dal loader
+    this.toSpawn = []; // entità da spawnare (es. monete da question block)
   }
 
-  update(deltaTime) {
-    // aggiorna tutte le entità
-    this.entities.forEach((entity) => {
-      entity.update(deltaTime);
-    });
-  }
+  update(deltaTime) {}
 
   /**
    * Calcola la larghezza e altezza reale del livello in pixel

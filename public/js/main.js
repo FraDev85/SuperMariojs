@@ -9,22 +9,17 @@ import {
   createSpriteLayer,
   createCameraLayer,
 } from "./layers.js";
+import { checkCollision, loadCoinSprites, createCoin } from "./coin.js";
 
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
 
-// ── Risoluzione interna fissa (stile NES) ─────────────────────────
-// Il gioco gira sempre a 256×240, poi viene scalato al canvas reale.
-// Così il JSON non dipende mai dalla dimensione del canvas.
 const INTERNAL_WIDTH = 256;
 const INTERNAL_HEIGHT = 240;
-
 const scale = Math.min(
   canvas.width / INTERNAL_WIDTH,
   canvas.height / INTERNAL_HEIGHT,
 );
-
-// disabilita smoothing per mantenere i pixel nitidi
 ctx.imageSmoothingEnabled = false;
 
 const LEFT = 37;
@@ -32,25 +27,22 @@ const RIGHT = 39;
 const JUMP = 32;
 
 async function main() {
-  // ── 1. Entità ──────────────────────────────────────────────────────
+  // ── Entità ─────────────────────────────
   const mario = await createMario();
-
-  // ── 2. Livello ─────────────────────────────────────────────────────
   const level = await loadLevel("1-1");
+  await loadCoinSprites(); // carica lo spritesheet delle monete
 
-  // posizione iniziale Mario — coordinate interne (256×240)
   mario.setPosition(45, 174);
   level.entities.add(mario);
 
   const { width: levelWidth, height: levelHeight } = level.getSize(16);
 
-  // ── 3. Camera ──────────────────────────────────────────────────────
-  // la camera usa sempre la risoluzione interna, non quella del canvas
+  // ── Camera ─────────────────────────────
   const camera = new Camera(mario, levelWidth, levelHeight);
   camera.snap(INTERNAL_WIDTH);
   let cameraLeftBound = camera.position.x;
 
-  // ── 4. Layer ───────────────────────────────────────────────────────
+  // ── Layer ──────────────────────────────
   const backgroundLayer = createBackgroundLayers(
     level,
     level.backgroundSprites,
@@ -63,7 +55,7 @@ async function main() {
   const cameraDebugLayer = createCameraLayer(level.entities);
   level.comp.layers.push((ctx) => cameraDebugLayer(ctx, camera));
 
-  // ── 5. Input ───────────────────────────────────────────────────────
+  // ── Input ──────────────────────────────
   const keyboard = new KeyboardState();
   keyboard.addMapping(LEFT, () => {});
   keyboard.addMapping(RIGHT, () => {});
@@ -88,13 +80,11 @@ async function main() {
     }
   }
 
-  // ── 6. Bounds ──────────────────────────────────────────────────────
   function applyBounds() {
     if (mario.position.x < cameraLeftBound) {
       mario.position.x = cameraLeftBound;
       if (mario.velocity.x < 0) mario.velocity.x = 0;
     }
-
     const rightBound = levelWidth - mario.size.x;
     if (mario.position.x > rightBound) {
       mario.position.x = rightBound;
@@ -102,60 +92,70 @@ async function main() {
     }
   }
 
-  // ── 7. Render ──────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────
   function render() {
-    // pulisci l'intero canvas reale
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // sfondo cielo
     ctx.fillStyle = "#5C94FC";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // scala al canvas reale mantenendo pixel nitidi
     ctx.save();
     ctx.scale(scale, scale);
-
-    // disegna tutti i layer nella risoluzione interna
     level.comp.layers.forEach((layer) => layer(ctx));
-
     ctx.restore();
   }
 
-  // ── 8. Game loop ───────────────────────────────────────────────────
+  // ── Timer / Loop ───────────────────────
   const timer = new Timer(1 / 60);
-
   timer.update = (deltaTime) => {
     handleInput();
-
     mario.lastDeltaTime = deltaTime;
 
-    level.update(deltaTime);
-
-    // collisioni
-    level.entities.forEach((entity) => {
-      if (entity.static) return;
+    // ── Aggiorna entità (safe copy) ─────────────────────
+    for (const entity of Array.from(level.entities)) {
       if (entity.update) entity.update(deltaTime);
-      // rimuovi monete finite
-      for (const entity of level.entities) {
-        if (entity.isAlive && !entity.isAlive()) {
-          level.entities.delete(entity);
+    }
+    for (const e of level.toSpawn) {
+      level.entities.add(e);
+    }
+    level.toSpawn.length = 0;
+
+    // ── Collisioni, monete, bump ─────────
+    for (const entity of Array.from(level.entities)) {
+      // Collisioni con tile
+      if (
+        entity.position &&
+        entity.velocity &&
+        !entity.static &&
+        level.tileCollider
+      ) {
+        level.tileCollider.checkX(entity);
+        const prevVelY = entity.velocity.y;
+        level.tileCollider.checkY(entity);
+
+        if (prevVelY > 0 && entity.velocity.y === 0) {
+          if (entity.jump) {
+            entity.jump.onGround = true;
+            entity.jump.isJumping = false;
+          }
         }
       }
 
-      level.tileCollider.checkX(entity);
+      // RACCOLTA MONETE (solo se è una coin)
+      if (entity.onCollect && checkCollision(mario, entity)) {
+        console.log("COLLISIONE MONETA"); // debug
 
-      const prevVelY = entity.velocity.y;
-      level.tileCollider.checkY(entity);
-
-      if (prevVelY > 0 && entity.velocity.y === 0) {
-        if (entity.jump) {
-          entity.jump.onGround = true;
-          entity.jump.isJumping = false;
-        }
+        entity.onCollect();
+        level.entities.delete(entity);
+        continue;
       }
-    });
 
-    // camera — usa risoluzione interna
+      // Rimuovi monete scadute
+      if (entity.isAlive && !entity.isAlive()) {
+        level.entities.delete(entity);
+      }
+    }
+
+    // ── Camera ───────────────────────────
     camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);
     cameraLeftBound = Math.max(cameraLeftBound, camera.position.x);
 

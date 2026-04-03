@@ -37,27 +37,18 @@ export async function createQuestionBlock(level) {
   let bumpVelocity = 0;
   let isBumping = false;
 
-  block.triggerBump = function () {
-    if (isBumping || block.hit) return;
-    isBumping = true;
-    bumpVelocity = -120;
+  block.triggerBump = function (level) {
+    if (block.hit) return;
 
-    console.log("Trigger bump su blocco: ", block.position);
+    console.log("Trigger bump");
 
-    if (!block.hit) {
-      // crea la moneta sopra il blocco
-      const coin = createCoin(
-        block.position.x,
-        block.position.y - 16,
-        level.backgroundSprites,
-      );
-      level.entities.add(coin);
-      block.hit = true;
+    const coin = createCoin(block.position.x, block.position.y - 16);
+    level.toSpawn.push(coin);
 
-      console.log("Entities nel livello:", level.entities.size);
-    }
+    coin.onCollect();
+
+    block.hit = true;
   };
-
   // ── Animatore ────────────────────────────────────────────────────
   const anim = new Animator(["q1", "q2", "q3"], 0.2);
   let animTime = 0;

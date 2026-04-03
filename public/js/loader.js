@@ -2,6 +2,7 @@
 import Level from "./level.js";
 import TileCollider from "./tileCollider.js";
 import { createQuestionBlock } from "./questionBlock.js";
+import { createCoin } from "./coin.js";
 
 // ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
@@ -75,7 +76,7 @@ async function createEntities(level, entities = []) {
     position: [px, py],
   } of entities) {
     if (type === "questionBlock") {
-      const block = await createQuestionBlock(level); // passa il livello
+      const block = await createQuestionBlock();
       block.setPosition(px, py);
       level.entities.add(block);
 
@@ -83,10 +84,13 @@ async function createEntities(level, entities = []) {
       const tileY = Math.floor(py / 16);
       level.tiles.set(tileX, tileY, { name: "questionBlock", block });
     }
-    // future entities come goomba, koopa, ecc.
+
+    if (type === "coin") {
+      const coin = createCoin(px, py);
+      level.entities.add(coin);
+    }
   }
 }
-
 // ── Carica livello ────────────────────────────────────────────────
 export async function loadLevel(name) {
   const res = await fetch(`/levels/${name}.json`);
