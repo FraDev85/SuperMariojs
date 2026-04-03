@@ -29,15 +29,22 @@ export function createBackgroundLayers(level, sprites) {
     }
   };
 }
-export function createSpriteLayer(entities) {
+export function createSpriteLayer(entities, sprites) {
   return function drawSpriteLayer(ctx, camera) {
-    entities.forEach((entity) => {
-      if (!entity.position || !entity.size) return;
+    for (const entity of entities) {
+      if (!entity.draw) continue;
       ctx.save();
       ctx.translate(-camera.position.x, -camera.position.y);
-      entity.draw(ctx);
+
+      // Se l'entità è una moneta, passa gli sprite corretti
+      if (entity.isAlive && entity.draw.name === "draw") {
+        entity.draw(ctx, sprites); // sprite coins
+      } else {
+        entity.draw(ctx);
+      }
+
       ctx.restore();
-    });
+    }
   };
 }
 

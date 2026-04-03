@@ -134,6 +134,14 @@ async function main() {
     // collisioni
     level.entities.forEach((entity) => {
       if (entity.static) return;
+      if (entity.update) entity.update(deltaTime);
+      // rimuovi monete finite
+      for (const entity of level.entities) {
+        if (entity.isAlive && !entity.isAlive()) {
+          level.entities.delete(entity);
+        }
+      }
+
       level.tileCollider.checkX(entity);
 
       const prevVelY = entity.velocity.y;

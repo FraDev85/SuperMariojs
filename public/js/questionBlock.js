@@ -2,6 +2,7 @@
 import { loadImage } from "./loader.js";
 import SpriteSheet from "./spriteSheet.js";
 import Animator from "./animator.js";
+import { createCoin } from "./coin.js";
 
 async function loadQuestionBlockSprites() {
   const image = await loadImage("/img/tiles.png");
@@ -15,7 +16,7 @@ async function loadQuestionBlockSprites() {
   return sprites;
 }
 
-export async function createQuestionBlock() {
+export async function createQuestionBlock(level) {
   const sprites = await loadQuestionBlockSprites();
 
   const block = {
@@ -39,7 +40,22 @@ export async function createQuestionBlock() {
   block.triggerBump = function () {
     if (isBumping || block.hit) return;
     isBumping = true;
-    bumpVelocity = -120; // negativo = sale
+    bumpVelocity = -120;
+
+    console.log("Trigger bump su blocco: ", block.position);
+
+    if (!block.hit) {
+      // crea la moneta sopra il blocco
+      const coin = createCoin(
+        block.position.x,
+        block.position.y - 16,
+        level.backgroundSprites,
+      );
+      level.entities.add(coin);
+      block.hit = true;
+
+      console.log("Entities nel livello:", level.entities.size);
+    }
   };
 
   // ── Animatore ────────────────────────────────────────────────────
@@ -48,16 +64,13 @@ export async function createQuestionBlock() {
 
   // ── Update ───────────────────────────────────────────────────────
   block.update = function (deltaTime) {
-    if (!block.hit) {
-      animTime += deltaTime;
-    }
+    if (!block.hit) animTime += deltaTime;
 
     if (!isBumping) return;
 
     bumpVelocity += 300 * deltaTime;
     bumpOffset += bumpVelocity * deltaTime;
 
-    // appena torna a 0 il bump è finito
     if (bumpOffset >= 0) {
       bumpOffset = 0;
       bumpVelocity = 0;
@@ -67,10 +80,10 @@ export async function createQuestionBlock() {
 
   // ── Draw ─────────────────────────────────────────────────────────
   block.draw = function (ctx) {
-    const frameIndex = Math.floor(animTime / 0.2) % 3;
     const frameNames = ["q1", "q2", "q3"];
-    const frame = block.hit ? "hit" : frameNames[frameIndex];
-
+    const frame = block.hit
+      ? "hit"
+      : frameNames[Math.floor(animTime / 0.2) % 3];
     sprites.draw(frame, ctx, block.position.x, block.position.y + bumpOffset);
   };
 

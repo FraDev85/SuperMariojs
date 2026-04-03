@@ -20,7 +20,9 @@ export async function loadBackgroundSprites(tileSize = 16) {
   const tileMap = {
     sky: [10, 7],
     ground: [0, 0],
-    platform: [2, 0],
+    platform: [1, 0],
+    questionBlock: [4, 0],
+    coin: [15, 0],
   };
 
   const sprites = {};
@@ -73,20 +75,15 @@ async function createEntities(level, entities = []) {
     position: [px, py],
   } of entities) {
     if (type === "questionBlock") {
-      const block = await createQuestionBlock();
+      const block = await createQuestionBlock(level); // passa il livello
       block.setPosition(px, py);
       level.entities.add(block);
 
-      // ✅ registra il blocco nella matrice tile
-      // così il tileCollider lo trova quando Mario lo colpisce dal basso
       const tileX = Math.floor(px / 16);
       const tileY = Math.floor(py / 16);
       level.tiles.set(tileX, tileY, { name: "questionBlock", block });
-      const check = level.tiles.get(tileX, tileY);
-      console.log(`SET tileX:${tileX} tileY:${tileY} → GET:`, check?.name);
     }
-
-    // qui in futuro: goomba, koopa, ecc.
+    // future entities come goomba, koopa, ecc.
   }
 }
 
@@ -103,7 +100,7 @@ export async function loadLevel(name) {
 
   await createEntities(level, levelSpec.entities);
 
-  level.tileCollider = new TileCollider(level.tiles);
+  level.tileCollider = new TileCollider(level.tiles, 16, level);
 
   return level;
 }
