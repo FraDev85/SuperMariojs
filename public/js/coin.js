@@ -1,15 +1,14 @@
 // coin.js
 import { loadImage } from "./loader.js";
 import SpriteSheet from "./spriteSheet.js";
-let coinSprites; // globale nel modulo
-const coinSound = new Audio("../sounds/coin.ogg");
-console.log(coinSound);
 
-coinSound.volume = 0.5; // regola il volume della moneta
+let coinSprites;
+const coinSound = new Audio("../sounds/coin.ogg");
 
 export async function loadCoinSprites() {
   const image = await loadImage("/img/tiles.png");
   const sprites = new SpriteSheet(image, 16, 16);
+  // coordinate NES: riga 0, colonna 15
   sprites.define("coin", 240, 0, 16, 16);
   coinSprites = sprites;
   return sprites;
@@ -18,18 +17,19 @@ export async function loadCoinSprites() {
 export function createCoin(x, y) {
   const coin = {
     position: { x, y },
-    velocity: { x: 0, y: -60 },
-    age: 0,
-    lifetime: 0.5,
+    velocity: { x: 0, y: -80 }, // più veloce per il “pop”
+    lifetime: 0.5, // dura mezzo secondo
     size: { x: 16, y: 16 },
+    age: 0,
 
     update(deltaTime) {
       this.age += deltaTime;
-
-      // NON aggiornare subito (frame di spawn)
-      if (this.age < 0.02) return;
       this.position.y += this.velocity.y * deltaTime;
-      this.lifetime -= deltaTime;
+      // rallenta la salita
+      this.velocity.y += 300 * deltaTime; // gravità verso il basso
+      if (this.age > this.lifetime) {
+        this.lifetime = -1; // segna come da rimuovere
+      }
     },
 
     draw(ctx) {
@@ -38,21 +38,18 @@ export function createCoin(x, y) {
     },
 
     isAlive() {
-      return this.lifetime > 0 && !this.collected;
+      return this.lifetime > 0;
     },
+
     onCollect() {
       coinSound.currentTime = 0;
-      console.log("SUONO MONETA");
-
-      const playPromise = coinSound.play();
-
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn("Audio bloccato:", err);
-        });
-      }
+      coinSound.play();
     },
   };
+
+  // Riproduce subito il suono alla comparsa, come NES
+  coinSound.currentTime = 0;
+  coinSound.play();
 
   return coin;
 }
