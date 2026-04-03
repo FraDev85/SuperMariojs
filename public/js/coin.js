@@ -8,8 +8,12 @@ const coinSound = new Audio("../sounds/coin.ogg");
 export async function loadCoinSprites() {
   const image = await loadImage("/img/tiles.png");
   const sprites = new SpriteSheet(image, 16, 16);
-  // coordinate NES: riga 0, colonna 15
-  sprites.define("coin", 240, 0, 16, 16);
+
+  // Definiamo tutti i frame della moneta (riga 0 → 11)
+  for (let i = 0; i <= 11; i++) {
+    sprites.define(`coin${i}`, 240, i * 16, 16, 16);
+  }
+
   coinSprites = sprites;
   return sprites;
 }
@@ -17,24 +21,37 @@ export async function loadCoinSprites() {
 export function createCoin(x, y) {
   const coin = {
     position: { x, y },
-    velocity: { x: 0, y: -80 }, // più veloce per il “pop”
-    lifetime: 0.5, // dura mezzo secondo
+    velocity: { x: 0, y: -150 }, // impulso iniziale verso l'alto
+    lifetime: 1, // dura 1 secondo
     size: { x: 16, y: 16 },
     age: 0,
+    frameTime: 0,
+    currentFrame: 0,
 
     update(deltaTime) {
       this.age += deltaTime;
+
+      // Gravità verso il basso, crea un arco
+      this.velocity.y += 400 * deltaTime;
       this.position.y += this.velocity.y * deltaTime;
-      // rallenta la salita
-      this.velocity.y += 300 * deltaTime; // gravità verso il basso
+
+      // Animazione rotazione moneta
+      this.frameTime += deltaTime;
+      if (this.frameTime > 0.3) {
+        // cambia frame ogni 0.3s
+        this.frameTime = 0;
+        this.currentFrame = (this.currentFrame + 1) % 12;
+      }
+
       if (this.age > this.lifetime) {
-        this.lifetime = -1; // segna come da rimuovere
+        this.lifetime = -1; // da rimuovere
       }
     },
 
     draw(ctx) {
       if (!coinSprites) return;
-      coinSprites.draw("coin", ctx, this.position.x, this.position.y);
+      const frameName = `coin${this.currentFrame}`;
+      coinSprites.draw(frameName, ctx, this.position.x, this.position.y);
     },
 
     isAlive() {
@@ -47,7 +64,7 @@ export function createCoin(x, y) {
     },
   };
 
-  // Riproduce subito il suono alla comparsa, come NES
+  // Suono alla comparsa
   coinSound.currentTime = 0;
   coinSound.play();
 
