@@ -11,7 +11,18 @@ export default class Level {
     this.toSpawn = []; // entità da spawnare (es. monete da question block)
   }
 
-  update(deltaTime) {}
+  update(deltaTime) {
+    // aggiorna tutte le entità
+    this.entities.forEach((entity) => {
+      if (entity.update) entity.update(deltaTime);
+    });
+
+    // spawna le entità in coda (es. monete dai blocchi ?)
+    for (const e of this.toSpawn) {
+      this.entities.add(e);
+    }
+    this.toSpawn.length = 0;
+  }
 
   /**
    * Calcola la larghezza e altezza reale del livello in pixel

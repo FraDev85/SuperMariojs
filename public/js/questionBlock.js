@@ -23,8 +23,9 @@ export async function createQuestionBlock(level) {
     position: { x: 0, y: 0 },
     size: { x: 16, y: 16 },
     solid: true,
-    hit: false,
     static: true,
+    hit: false,
+    type: "coin", // 🔥 pronto per mushroom
 
     setPosition(x, y) {
       this.position.x = x;
@@ -32,40 +33,53 @@ export async function createQuestionBlock(level) {
     },
   };
 
-  // ── Bump ──────────────────────────────
+  // ─────────────────────────────
+  // 🎯 BUMP PHYSICS
+  // ─────────────────────────────
   let bumpOffset = 0;
   let bumpVelocity = 0;
   let isBumping = false;
 
+  const GRAVITY = 600;
+
   block.triggerBump = function () {
     if (block.hit) return;
 
-    console.log("Trigger bump");
+    // attiva animazione bump
+    isBumping = true;
+    bumpVelocity = -150;
 
-    // Creazione moneta
-    const coin = new Coin(block.position.x, block.position.y - 16);
-    if (level && level.toSpawn) {
-      level.toSpawn.push(coin);
-    } else {
-      console.warn("Level o level.toSpawn non definito");
+    // spawn contenuto
+    if (block.type === "coin") {
+      const coin = new Coin(block.position.x, block.position.y - 16);
+      coin.onCollect();
+
+      if (level && level.toSpawn) {
+        level.toSpawn.push(coin);
+      }
     }
 
-    // Suono alla comparsa
-    coin.onCollect();
+    // 👉 qui in futuro:
+    // if (block.type === "mushroom") spawn fungo
 
     block.hit = true;
   };
 
-  // ── Animatore ─────────────────────────
+  // ─────────────────────────────
+  // 🎞️ ANIMAZIONE
+  // ─────────────────────────────
   const anim = new Animator(["q1", "q2", "q3"], 0.2);
-  let animTime = 0;
 
   block.update = function (deltaTime) {
-    if (!block.hit) animTime += deltaTime;
+    // animazione solo se non colpito
+    if (!block.hit) {
+      anim.frame(deltaTime);
+    }
 
+    // bump
     if (!isBumping) return;
 
-    bumpVelocity += 300 * deltaTime;
+    bumpVelocity += GRAVITY * deltaTime;
     bumpOffset += bumpVelocity * deltaTime;
 
     if (bumpOffset >= 0) {
@@ -75,12 +89,18 @@ export async function createQuestionBlock(level) {
     }
   };
 
-  // ── Draw ──────────────────────────────
+  // ─────────────────────────────
+  // 🖼️ DRAW
+  // ─────────────────────────────
   block.draw = function (ctx) {
-    const frameNames = ["q1", "q2", "q3"];
-    const frame = block.hit
-      ? "hit"
-      : frameNames[Math.floor(animTime / 0.2) % 3];
+    let frame;
+
+    if (block.hit) {
+      frame = "hit";
+    } else {
+      frame = anim.frame(0); // usa stato corrente
+    }
+
     sprites.draw(frame, ctx, block.position.x, block.position.y + bumpOffset);
   };
 

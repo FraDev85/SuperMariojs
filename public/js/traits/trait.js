@@ -3,7 +3,7 @@ export default class Trait {
     this.NAME = name;
   }
 
-  update(entity, dtime) {
+  update(deltaTime, entity) {
     console.warn("Trait update not implemented for", this.NAME);
   }
 }

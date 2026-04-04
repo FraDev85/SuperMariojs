@@ -121,46 +121,30 @@ async function main() {
     handleInput();
     mario.lastDeltaTime = deltaTime;
 
-    // Aggiorna tutte le entità
-    for (const entity of Array.from(level.entities)) {
-      if (entity.update) entity.update(deltaTime);
-    }
+    level.update(deltaTime);
 
-    // Spawna le monete dai blocchi
-    for (const e of level.toSpawn) {
-      level.entities.add(e);
-    }
-    level.toSpawn.length = 0;
+    // collisioni
+    for (const entity of level.entities) {
+      if (!entity.position || !entity.velocity || entity.static) continue;
 
-    // ── Collisioni ─────────────────────────
-    for (const entity of Array.from(level.entities)) {
-      // Collisione con tile
-      if (
-        entity.position &&
-        entity.velocity &&
-        !entity.static &&
-        level.tileCollider
-      ) {
-        level.tileCollider.checkX(entity);
-        const prevVelY = entity.velocity.y;
-        level.tileCollider.checkY(entity);
+      level.tileCollider.checkX(entity);
+      const prevVelY = entity.velocity.y;
+      level.tileCollider.checkY(entity);
 
-        if (prevVelY > 0 && entity.velocity.y === 0) {
-          if (entity.jump) {
-            entity.jump.onGround = true;
-            entity.jump.isJumping = false;
-          }
+      if (prevVelY > 0 && entity.velocity.y === 0) {
+        if (entity.jump) {
+          entity.jump.onGround = true;
+          entity.jump.isJumping = false;
         }
       }
+    }
 
-      // Raccolta monete (sia Coin che CoinStable)
+    // raccolta monete
+    for (const entity of level.entities) {
       if (entity.onCollect && checkCollision(mario, entity)) {
-        console.log("COLLISIONE MONETA");
         entity.onCollect();
         level.entities.delete(entity);
       }
-
-      // Rimuovi Coin con lifetime finita
       if (entity.isAlive && !entity.isAlive()) {
         level.entities.delete(entity);
       }
@@ -168,11 +152,9 @@ async function main() {
 
     camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);
     cameraLeftBound = Math.max(cameraLeftBound, camera.position.x);
-
     applyBounds();
     render();
   };
-
   timer.start();
 }
 

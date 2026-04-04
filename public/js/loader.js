@@ -4,7 +4,6 @@ import TileCollider from "./tileCollider.js";
 import { createQuestionBlock } from "./questionBlock.js";
 import Coin from "./coin.js";
 import CoinStable from "./coinStable.js";
-
 // ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
   return new Promise((resolve, reject) => {
