@@ -13,7 +13,6 @@ export async function loadMarioSprite() {
   sprites.define("small/jump", 80, 88, 16, 16);
   sprites.define("small/skid", 64, 88, 16, 16);
 
-  // ── Mario big (riga 6-7, y=96, sprite 16x32) ─────────────────────
   sprites.define("big/idle", 112, 88, 16, 32);
   sprites.define("big/walk1", 128, 88, 16, 32);
   sprites.define("big/walk2", 144, 88, 16, 32);

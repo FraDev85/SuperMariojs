@@ -15,9 +15,6 @@ export default class Entity {
     this.velocity = { x: 0, y: 0 };
     this.size = { x: 16, y: 16 };
     this.traits = [];
-
-    // riferimento al tileCollider, assegnato dopo il caricamento del livello
-    this._tileCollider = null;
   }
 
   addTrait(trait) {
@@ -65,22 +62,18 @@ export async function createMario() {
     0.1,
   );
 
-  function resolveSprite(deltaTime) {
-    // ⚡ lampeggio durante trasformazione
-    if (mario.isPoweringUp) {
-      const flash = Math.floor(mario.powerUpTime * 10) % 2;
-      return flash === 0 ? "small/idle" : "big/idle";
-    }
+  // ── Logica animazioni base ───────────────────────────────────────
+  function getBaseSprite(prefix, deltaTime) {
+    const walkAnim = prefix === "big" ? walkAnimBig : walkAnimSmall;
 
-    const prefix = mario.isBig ? "big" : "small";
-    const walkAnim = mario.isBig ? walkAnimBig : walkAnimSmall;
-
+    // salto
     if (!mario.jump.onGround || mario.jump.isJumping) {
       walkAnimSmall.reset();
       walkAnimBig.reset();
       return `${prefix}/jump`;
     }
 
+    // skid
     const isSkidding =
       (mario.velocity.x > 0 && mario.facing === -1) ||
       (mario.velocity.x < 0 && mario.facing === 1);
@@ -91,12 +84,28 @@ export async function createMario() {
       return `${prefix}/skid`;
     }
 
+    // camminata
     if (mario.velocity.x !== 0) {
       return walkAnim.frame(deltaTime);
     }
 
+    // idle
     walkAnim.reset();
     return `${prefix}/idle`;
+  }
+
+  // ── Resolve sprite ───────────────────────────────────────────────
+  function resolveSprite(deltaTime) {
+    // ⚡ lampeggio durante power-up (mantiene animazioni!)
+    if (mario.isPoweringUp) {
+      const flash = Math.floor(mario.powerUpTime * 10) % 2;
+      const prefix = flash === 0 ? "small" : "big";
+      return getBaseSprite(prefix, deltaTime);
+    }
+
+    // normale
+    const prefix = mario.isBig ? "big" : "small";
+    return getBaseSprite(prefix, deltaTime);
   }
 
   mario.lastDeltaTime = 0;
@@ -131,49 +140,25 @@ export async function createMario() {
   const originalUpdate = mario.update.bind(mario);
 
   mario.update = function (deltaTime) {
-    this.lastDeltaTime = deltaTime;
+    mario.lastDeltaTime = deltaTime;
 
-    // update normale
-    originalUpdate(deltaTime);
+    // blocco movimento durante power-up
+    if (!mario.isPoweringUp) {
+      originalUpdate(deltaTime);
+    } else {
+      mario.velocity.x = 0;
+      mario.velocity.y = 0;
+    }
 
-    // ⏱ gestione power-up
-    if (this.isPoweringUp) {
-      this.powerUpTime += deltaTime;
+    // gestione power-up
+    if (mario.isPoweringUp) {
+      mario.powerUpTime += deltaTime;
 
-      if (this.powerUpTime > 1) {
-        this.isPoweringUp = false;
-        this.isBig = true;
-        this.size.y = 32;
-
-        // ── Controlla spazio libero sopra prima di spostare ────────
-        // Bisogna verificare ENTRAMBE le colonne di Mario (sinistra e destra)
-        // per gestire i casi in cui è a cavallo di due tile.
-        const tc = this._tileCollider;
-        let spaceAbove = true;
-
-        if (tc) {
-          const tileRow = tc.toIndex(this.position.y - 1); // riga immediatamente sopra
-          const tileXLeft = tc.toIndex(this.position.x);
-          const tileXRight = tc.toIndex(this.position.x + this.size.x - 1);
-
-          for (let tx = tileXLeft; tx <= tileXRight; tx++) {
-            const tile = tc.getTileByIndex(tx, tileRow);
-            if (tile && tile.name !== "sky") {
-              spaceAbove = false;
-              break;
-            }
-          }
-        }
-
-        if (spaceAbove) {
-          // spazio libero: Mario cresce verso l'alto normalmente
-          this.position.y -= 16;
-        } else {
-          // tile solida sopra: Mario rimane fermo e si espande verso il basso
-          // (position.y invariata — la tile del piano è già sotto di lui)
-          // La size.y è già 32, quindi il collider inferiore scende di 16px;
-          // il prossimo checkY lo risistemerà a terra automaticamente.
-        }
+      if (mario.powerUpTime > 1) {
+        mario.isPoweringUp = false;
+        mario.isBig = true;
+        mario.size.y = 32;
+        mario.position.y -= 16;
       }
     }
   };
