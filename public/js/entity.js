@@ -44,6 +44,12 @@ export async function createMario() {
   mario.powerUp = function () {
     if (mario.isBig || mario.isPoweringUp) return;
 
+    // ✅ Inizia subito la hitbox grande per evitare problemi con le tile
+    const oldBottom = mario.position.y + mario.size.y;
+    mario.size.y = 32;
+    mario.position.y = oldBottom - mario.size.y;
+
+    // Attiva animazione power-up
     mario.isPoweringUp = true;
     mario.powerUpTime = 0;
 
@@ -96,14 +102,13 @@ export async function createMario() {
 
   // ── Resolve sprite ───────────────────────────────────────────────
   function resolveSprite(deltaTime) {
-    // ⚡ lampeggio durante power-up (mantiene animazioni!)
+    // ⚡ lampeggio durante power-up
     if (mario.isPoweringUp) {
       const flash = Math.floor(mario.powerUpTime * 10) % 2;
       const prefix = flash === 0 ? "small" : "big";
       return getBaseSprite(prefix, deltaTime);
     }
 
-    // normale
     const prefix = mario.isBig ? "big" : "small";
     return getBaseSprite(prefix, deltaTime);
   }
@@ -142,25 +147,23 @@ export async function createMario() {
   mario.update = function (deltaTime) {
     mario.lastDeltaTime = deltaTime;
 
-    // blocco movimento durante power-up
-    if (!mario.isPoweringUp) {
-      originalUpdate(deltaTime);
-    } else {
+    if (mario.isPoweringUp) {
+      // 🧍 blocco movimento orizzontale
       mario.velocity.x = 0;
       mario.velocity.y = 0;
-    }
 
-    // gestione power-up
-    if (mario.isPoweringUp) {
+      // incrementa il tempo power-up
       mario.powerUpTime += deltaTime;
 
+      // fine animazione power-up
       if (mario.powerUpTime > 1) {
         mario.isPoweringUp = false;
-        mario.isBig = true;
-        mario.size.y = 32;
-        mario.position.y -= 16;
+        mario.isBig = true; // già grande, solo fine animazione
       }
     }
+
+    // ✅ update traits sempre attivo (fisica + collisioni)
+    originalUpdate(deltaTime);
   };
 
   return mario;
