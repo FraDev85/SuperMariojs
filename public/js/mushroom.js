@@ -7,7 +7,6 @@ async function loadMushroomSprites() {
   const image = await loadImage("/img/sprites.png");
   const sprites = new SpriteSheet(image, 16, 16);
 
-  // posizione sprite fungo (modifica se serve)
   sprites.define("mushroom", 0, 152, 16, 16);
 
   return sprites;
@@ -23,6 +22,7 @@ export async function createMushroom() {
     size: { x: 16, y: 16 },
 
     alive: true,
+    isMushroom: true, // 🍄 flag per il game loop — attiva collisioni + reverse
 
     // animazione uscita dal blocco
     emerging: true,
@@ -36,7 +36,7 @@ export async function createMushroom() {
 
     // ── Update ─────────────────────────────────────────────────────
     update(deltaTime) {
-      // 🍄 uscita dal blocco
+      // 🍄 uscita dal blocco — solo animazione verticale, niente fisica esterna
       if (this.emerging) {
         const speed = 30;
 
@@ -45,18 +45,18 @@ export async function createMushroom() {
 
         if (this.emergeProgress >= 16) {
           this.emerging = false;
-          this.velocity.x = 60; // parte verso destra
+          this.velocity.x = 60; // parte verso destra al termine dell'emersione
         }
 
         return;
       }
 
-      // ➡️ movimento orizzontale
-      this.position.x += this.velocity.x * deltaTime;
-
-      // ⬇️ gravità
+      // ⬇️ gravità — applicata qui; checkY nel game loop risolve la posizione
       this.velocity.y += 1000 * deltaTime;
-      this.position.y += this.velocity.y * deltaTime;
+
+      // ➡️ movimento orizzontale — checkX nel game loop chiama reverse() se colpisce un muro
+      // Non aggiorniamo position qui: ci pensa il tileCollider tramite checkX/checkY
+      // (il movimento effettivo della posizione avviene nelle chiamate check* in main.js)
     },
 
     // ── Draw ───────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ export async function createMushroom() {
       mario.powerUp();
     },
 
-    // ── Collisione muro ────────────────────────────────────────────
+    // ── Collisione muro → inverte direzione ────────────────────────
     reverse() {
       this.velocity.x *= -1;
     },

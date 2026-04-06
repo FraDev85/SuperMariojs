@@ -70,7 +70,6 @@ async function main() {
   keyboard.addMapping(LEFT, () => {});
   keyboard.addMapping(RIGHT, () => {});
   keyboard.addMapping(JUMP, (keyState) => {
-    // 🔒 blocca il salto durante il power-up
     if (mario.isPoweringUp) return;
     if (keyState) mario.jump.start(mario);
     else mario.jump.cancel(mario);
@@ -78,10 +77,8 @@ async function main() {
   keyboard.listenTo(window);
 
   function handleInput() {
-    // 🔒 blocca tutto il movimento durante il power-up
     if (mario.isPoweringUp) {
       mario.velocity.x = 0;
-      mario.velocity.y = 0;
       return;
     }
 
@@ -138,19 +135,30 @@ async function main() {
     for (const entity of level.entities) {
       if (!entity.position || !entity.velocity || entity.static) continue;
 
-      // collisione fungo: rimbalza sui muri
+      // ── Fungo ─────────────────────────────────────────────────
       if (entity.isMushroom) {
+        // durante l'emersione il fungo si muove solo in verticale
+        // nel proprio update() — non interferire con checkX/checkY
+        if (entity.emerging) continue;
+
+        // applica posizione orizzontale poi controlla muri
+        entity.position.x += entity.velocity.x * deltaTime;
         const prevVelX = entity.velocity.x;
         level.tileCollider.checkX(entity);
-        // se ha colpito un muro (velocity.x azzerato) → inverti direzione
+
+        // checkX azzera velocity.x se c'è un muro → reverse
         if (prevVelX !== 0 && entity.velocity.x === 0) {
-          entity.velocity.x = prevVelX > 0 ? -60 : 60;
+          entity.reverse();
         }
+
+        // applica posizione verticale poi controlla pavimento/soffitto
+        entity.position.y += entity.velocity.y * deltaTime;
         level.tileCollider.checkY(entity);
+
         continue;
       }
 
-      // collisione normale (Mario, monete con gravità, ecc.)
+      // ── Mario e altre entità normali ──────────────────────────
       level.tileCollider.checkX(entity);
       const prevVelY = entity.velocity.y;
       level.tileCollider.checkY(entity);
@@ -165,7 +173,6 @@ async function main() {
 
     // ── Raccolta monete e funghi ──────────────────────────────────
     for (const entity of [...level.entities]) {
-      // rimuovi entità morte
       if (entity.isAlive && !entity.isAlive()) {
         level.entities.delete(entity);
         continue;
@@ -173,7 +180,6 @@ async function main() {
 
       if (!entity.onCollect) continue;
 
-      // collisione con Mario
       if (checkCollision(mario, entity)) {
         entity.onCollect(mario);
         level.entities.delete(entity);
