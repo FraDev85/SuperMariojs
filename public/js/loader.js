@@ -4,6 +4,7 @@ import TileCollider from "./tileCollider.js";
 import { createQuestionBlock } from "./questionBlock.js";
 import Coin from "./coin.js";
 import CoinStable from "./coinStable.js";
+
 // ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
   return new Promise((resolve, reject) => {
@@ -19,11 +20,11 @@ export async function loadBackgroundSprites(tileSize = 16) {
   const image = await loadImage("/img/tiles.png");
 
   const tileMap = {
-    sky: [10, 7],
-    ground: [0, 0],
-    platform: [1, 0],
-    questionBlock: [4, 0],
-    coin: [15, 0],
+    sky:           [10, 7],
+    ground:        [0,  0],
+    platform:      [1,  0],
+    questionBlock: [4,  0],
+    coin:          [15, 0],
   };
 
   const sprites = {};
@@ -101,7 +102,10 @@ async function createEntities(level, entities = []) {
 }
 
 // ── Carica livello ────────────────────────────────────────────────
-export async function loadLevel(name) {
+// Accetta un'entità opzionale (mario) a cui collegare il tileCollider.
+// In questo modo mario.update() può verificare le tile sopra di lui
+// durante la trasformazione power-up senza causare invasione delle tile.
+export async function loadLevel(name, playerEntity = null) {
   const res = await fetch(`/levels/${name}.json`);
   const levelSpec = await res.json();
 
@@ -114,6 +118,13 @@ export async function loadLevel(name) {
   await createEntities(level, levelSpec.entities);
 
   level.tileCollider = new TileCollider(level.tiles, 16, level);
+
+  // ── Collega il tileCollider al giocatore ──────────────────────────
+  // Necessario per il controllo anti-invasione durante il power-up:
+  // mario._tileCollider viene letto in entity.js → mario.update()
+  if (playerEntity) {
+    playerEntity._tileCollider = level.tileCollider;
+  }
 
   return level;
 }

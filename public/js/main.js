@@ -13,25 +13,25 @@ import { checkCollision, loadCoinSprites } from "./coin.js";
 import CoinStable from "./coinStable.js";
 
 const canvas = document.getElementById("screen");
-const ctx    = canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 
-const INTERNAL_WIDTH  = 256;
+const INTERNAL_WIDTH = 256;
 const INTERNAL_HEIGHT = 240;
 const scale = Math.min(
-  canvas.width  / INTERNAL_WIDTH,
+  canvas.width / INTERNAL_WIDTH,
   canvas.height / INTERNAL_HEIGHT,
 );
 
 ctx.imageSmoothingEnabled = false;
 
-const LEFT  = 37;
+const LEFT = 37;
 const RIGHT = 39;
-const JUMP  = 32;
+const JUMP = 32;
 
 async function main() {
   // ── 1. Entità ──────────────────────────────────────────────────────
   const mario = await createMario();
-  const level = await loadLevel("1-1");
+  const level = await loadLevel("1-1", mario);
   await loadCoinSprites();
 
   mario.setPosition(45, 174);
@@ -41,7 +41,7 @@ async function main() {
 
   // Monete statiche di esempio
   const stableCoins = [
-    new CoinStable(80,  160),
+    new CoinStable(80, 160),
     new CoinStable(150, 120),
     new CoinStable(200, 140),
   ];
@@ -53,7 +53,10 @@ async function main() {
   let cameraLeftBound = camera.position.x;
 
   // ── 3. Layer ───────────────────────────────────────────────────────
-  const backgroundLayer = createBackgroundLayers(level, level.backgroundSprites);
+  const backgroundLayer = createBackgroundLayers(
+    level,
+    level.backgroundSprites,
+  );
   level.comp.layers.push((ctx) => backgroundLayer(ctx, camera));
 
   const spriteLayer = createSpriteLayer(level.entities);
@@ -64,16 +67,25 @@ async function main() {
 
   // ── 4. Input ───────────────────────────────────────────────────────
   const keyboard = new KeyboardState();
-  keyboard.addMapping(LEFT,  () => {});
+  keyboard.addMapping(LEFT, () => {});
   keyboard.addMapping(RIGHT, () => {});
   keyboard.addMapping(JUMP, (keyState) => {
+    // 🔒 blocca il salto durante il power-up
+    if (mario.isPoweringUp) return;
     if (keyState) mario.jump.start(mario);
-    else          mario.jump.cancel(mario);
+    else mario.jump.cancel(mario);
   });
   keyboard.listenTo(window);
 
   function handleInput() {
-    const left  = keyboard.keyStates.get(LEFT)  === 1;
+    // 🔒 blocca tutto il movimento durante il power-up
+    if (mario.isPoweringUp) {
+      mario.velocity.x = 0;
+      mario.velocity.y = 0;
+      return;
+    }
+
+    const left = keyboard.keyStates.get(LEFT) === 1;
     const right = keyboard.keyStates.get(RIGHT) === 1;
 
     if (left && !right) {
@@ -145,7 +157,7 @@ async function main() {
 
       if (prevVelY > 0 && entity.velocity.y === 0) {
         if (entity.jump) {
-          entity.jump.onGround  = true;
+          entity.jump.onGround = true;
           entity.jump.isJumping = false;
         }
       }
@@ -153,7 +165,6 @@ async function main() {
 
     // ── Raccolta monete e funghi ──────────────────────────────────
     for (const entity of [...level.entities]) {
-
       // rimuovi entità morte
       if (entity.isAlive && !entity.isAlive()) {
         level.entities.delete(entity);
@@ -164,7 +175,7 @@ async function main() {
 
       // collisione con Mario
       if (checkCollision(mario, entity)) {
-        entity.onCollect(mario); // ✅ passa mario per powerUp
+        entity.onCollect(mario);
         level.entities.delete(entity);
       }
     }

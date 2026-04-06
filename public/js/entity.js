@@ -6,12 +6,18 @@ import VelocityMovement from "./traits/velocityMovement.js";
 import Gravity from "./traits/gravity.js";
 import Jump from "./traits/jump.js";
 
+// 🎵 suono power-up
+const powerUpSound = new Audio("../sounds/power-up-appears.ogg");
+
 export default class Entity {
   constructor() {
     this.position = { x: 0, y: 0 };
     this.velocity = { x: 0, y: 0 };
-    this.size     = { x: 16, y: 16 };
-    this.traits   = [];
+    this.size = { x: 16, y: 16 };
+    this.traits = [];
+
+    // riferimento al tileCollider, assegnato dopo il caricamento del livello
+    this._tileCollider = null;
   }
 
   addTrait(trait) {
@@ -31,28 +37,42 @@ export default class Entity {
 
 export async function createMario() {
   const sprites = await loadMarioSprite();
-  const mario   = new Entity();
+  const mario = new Entity();
 
   // ── Stato power-up ───────────────────────────────────────────────
   mario.isBig = false;
+  mario.isPoweringUp = false;
+  mario.powerUpTime = 0;
 
   mario.powerUp = function () {
-    if (mario.isBig) return;
-    mario.isBig      = true;
-    mario.size.y     = 32;
-    mario.position.y -= 16;
+    if (mario.isBig || mario.isPoweringUp) return;
+
+    mario.isPoweringUp = true;
+    mario.powerUpTime = 0;
+
+    powerUpSound.currentTime = 0;
+    powerUpSound.play();
   };
 
   // ── Animatori ────────────────────────────────────────────────────
   const walkAnimSmall = new Animator(
-    ["small/walk1", "small/walk2", "small/walk3"], 0.1
+    ["small/walk1", "small/walk2", "small/walk3"],
+    0.1,
   );
+
   const walkAnimBig = new Animator(
-    ["big/walk1", "big/walk2", "big/walk3"], 0.1
+    ["big/walk1", "big/walk2", "big/walk3"],
+    0.1,
   );
 
   function resolveSprite(deltaTime) {
-    const prefix   = mario.isBig ? "big" : "small";
+    // ⚡ lampeggio durante trasformazione
+    if (mario.isPoweringUp) {
+      const flash = Math.floor(mario.powerUpTime * 10) % 2;
+      return flash === 0 ? "small/idle" : "big/idle";
+    }
+
+    const prefix = mario.isBig ? "big" : "small";
     const walkAnim = mario.isBig ? walkAnimBig : walkAnimSmall;
 
     if (!mario.jump.onGround || mario.jump.isJumping) {
@@ -63,7 +83,7 @@ export async function createMario() {
 
     const isSkidding =
       (mario.velocity.x > 0 && mario.facing === -1) ||
-      (mario.velocity.x < 0 && mario.facing ===  1);
+      (mario.velocity.x < 0 && mario.facing === 1);
 
     if (isSkidding) {
       walkAnimSmall.reset();
@@ -106,5 +126,57 @@ export async function createMario() {
   mario.jump = jump;
 
   mario.facing = 1;
+
+  // ── Override update ──────────────────────────────────────────────
+  const originalUpdate = mario.update.bind(mario);
+
+  mario.update = function (deltaTime) {
+    this.lastDeltaTime = deltaTime;
+
+    // update normale
+    originalUpdate(deltaTime);
+
+    // ⏱ gestione power-up
+    if (this.isPoweringUp) {
+      this.powerUpTime += deltaTime;
+
+      if (this.powerUpTime > 1) {
+        this.isPoweringUp = false;
+        this.isBig = true;
+        this.size.y = 32;
+
+        // ── Controlla spazio libero sopra prima di spostare ────────
+        // Bisogna verificare ENTRAMBE le colonne di Mario (sinistra e destra)
+        // per gestire i casi in cui è a cavallo di due tile.
+        const tc = this._tileCollider;
+        let spaceAbove = true;
+
+        if (tc) {
+          const tileRow = tc.toIndex(this.position.y - 1); // riga immediatamente sopra
+          const tileXLeft = tc.toIndex(this.position.x);
+          const tileXRight = tc.toIndex(this.position.x + this.size.x - 1);
+
+          for (let tx = tileXLeft; tx <= tileXRight; tx++) {
+            const tile = tc.getTileByIndex(tx, tileRow);
+            if (tile && tile.name !== "sky") {
+              spaceAbove = false;
+              break;
+            }
+          }
+        }
+
+        if (spaceAbove) {
+          // spazio libero: Mario cresce verso l'alto normalmente
+          this.position.y -= 16;
+        } else {
+          // tile solida sopra: Mario rimane fermo e si espande verso il basso
+          // (position.y invariata — la tile del piano è già sotto di lui)
+          // La size.y è già 32, quindi il collider inferiore scende di 16px;
+          // il prossimo checkY lo risistemerà a terra automaticamente.
+        }
+      }
+    }
+  };
+
   return mario;
 }
