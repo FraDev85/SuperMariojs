@@ -10,8 +10,8 @@ export default class Entity {
   constructor() {
     this.position = { x: 0, y: 0 };
     this.velocity = { x: 0, y: 0 };
-    this.size = { x: 16, y: 16 };
-    this.traits = [];
+    this.size     = { x: 16, y: 16 };
+    this.traits   = [];
   }
 
   addTrait(trait) {
@@ -31,27 +31,44 @@ export default class Entity {
 
 export async function createMario() {
   const sprites = await loadMarioSprite();
-  const mario = new Entity();
+  const mario   = new Entity();
 
-  const walkAnim = new Animator(
-    ["small/walk1", "small/walk2", "small/walk3"],
-    0.1, // secondi per frame
+  // ── Stato power-up ───────────────────────────────────────────────
+  mario.isBig = false;
+
+  mario.powerUp = function () {
+    if (mario.isBig) return;
+    mario.isBig      = true;
+    mario.size.y     = 32;
+    mario.position.y -= 16;
+  };
+
+  // ── Animatori ────────────────────────────────────────────────────
+  const walkAnimSmall = new Animator(
+    ["small/walk1", "small/walk2", "small/walk3"], 0.1
+  );
+  const walkAnimBig = new Animator(
+    ["big/walk1", "big/walk2", "big/walk3"], 0.1
   );
 
   function resolveSprite(deltaTime) {
-    // In aria
+    const prefix   = mario.isBig ? "big" : "small";
+    const walkAnim = mario.isBig ? walkAnimBig : walkAnimSmall;
+
     if (!mario.jump.onGround || mario.jump.isJumping) {
-      walkAnim.reset();
-      return "small/jump";
+      walkAnimSmall.reset();
+      walkAnimBig.reset();
+      return `${prefix}/jump`;
     }
 
     const isSkidding =
       (mario.velocity.x > 0 && mario.facing === -1) ||
-      (mario.velocity.x < 0 && mario.facing === 1);
+      (mario.velocity.x < 0 && mario.facing ===  1);
 
     if (isSkidding) {
-      walkAnim.reset();
-      return "small/skid";
+      walkAnimSmall.reset();
+      walkAnimBig.reset();
+      return `${prefix}/skid`;
     }
 
     if (mario.velocity.x !== 0) {
@@ -59,11 +76,12 @@ export async function createMario() {
     }
 
     walkAnim.reset();
-    return "small/idle";
+    return `${prefix}/idle`;
   }
 
   mario.lastDeltaTime = 0;
 
+  // ── Draw ─────────────────────────────────────────────────────────
   mario.draw = function (ctx) {
     const spriteName = resolveSprite(mario.lastDeltaTime);
 
@@ -78,6 +96,7 @@ export async function createMario() {
     ctx.restore();
   };
 
+  // ── Traits ───────────────────────────────────────────────────────
   mario.addTrait(new Velocity());
   mario.addTrait(new VelocityMovement());
   mario.addTrait(new Gravity());

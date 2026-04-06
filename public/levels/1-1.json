@@ -18,7 +18,7 @@
     }
   ],
   "entities": [
-    { "type": "questionBlock", "position": [176, 128] },
+    { "type": "questionBlock", "position": [192, 128], "content": "mushroom" },
     { "type": "questionBlock", "position": [352, 112] },
     { "type": "questionBlock", "position": [512, 128] }
   ]

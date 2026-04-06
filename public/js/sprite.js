@@ -14,12 +14,12 @@ export async function loadMarioSprite() {
   sprites.define("small/skid", 64, 88, 16, 16);
 
   // ── Mario big (riga 6-7, y=96, sprite 16x32) ─────────────────────
-  sprites.define("big/idle", 0, 96, 16, 32);
-  sprites.define("big/walk1", 16, 96, 16, 32);
-  sprites.define("big/walk2", 32, 96, 16, 32);
-  sprites.define("big/walk3", 48, 96, 16, 32);
-  sprites.define("big/jump", 64, 96, 16, 32);
-  sprites.define("big/skid", 80, 96, 16, 32);
+  sprites.define("big/idle", 112, 88, 16, 32);
+  sprites.define("big/walk1", 128, 88, 16, 32);
+  sprites.define("big/walk2", 144, 88, 16, 32);
+  sprites.define("big/walk3", 160, 88, 16, 32);
+  sprites.define("big/jump", 192, 88, 16, 32);
+  sprites.define("big/skid", 176, 88, 16, 32);
 
   return sprites;
 }

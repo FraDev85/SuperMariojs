@@ -74,9 +74,12 @@ async function createEntities(level, entities = []) {
   for (const {
     type,
     position: [px, py],
+    content,
   } of entities) {
     if (type === "questionBlock") {
-      const block = await createQuestionBlock(level);
+      const blockContent = content || "coin";
+      const block = await createQuestionBlock(level, blockContent);
+
       block.setPosition(px, py);
       level.entities.add(block);
 
