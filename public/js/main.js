@@ -164,6 +164,8 @@ async function main() {
     mario.velocity.y = -400;
     mario.jump.onGround = false;
     mario._dead = true;
+    deathSound.currentTime = 0;
+    deathSound.play().catch(() => {});
   }
 
   // ── 8. Collisione Mario ↔ Goomba ──────────────────────────────────
