@@ -64,8 +64,10 @@ export default class Coin {
     return this.lifetime > 0;
   }
 
-  onCollect() {
+  onCollect(mario) {
     coinSound.currentTime = 0;
     coinSound.play();
+    // Notifica il game loop tramite callback su mario
+    if (mario && mario._onCoinCollect) mario._onCoinCollect();
   }
 }

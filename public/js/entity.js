@@ -117,6 +117,12 @@ export async function createMario() {
 
   // ── Draw ─────────────────────────────────────────────────────────
   mario.draw = function (ctx) {
+    // Lampeggio durante invincibilità: salta un frame su due
+    if (mario._invincibleTimer > 0) {
+      const blink = Math.floor(mario._invincibleTimer * 10) % 2 === 0;
+      if (blink) return; // frame invisibile → effetto lampeggio
+    }
+
     const spriteName = resolveSprite(mario.lastDeltaTime);
 
     ctx.save();

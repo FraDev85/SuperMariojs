@@ -42,6 +42,12 @@ async function main() {
   // ── HUD ───────────────────────────────────────────────────────────
   const hud = new HUD();
   await hud.load();
+  hud.lives = 3;
+
+  // Callback monete da CoinStable/raccolta manuale
+  mario._onCoinCollect = () => hud.addCoin();
+  // Callback monete da question block → contate subito all'uscita
+  level.onCoinCollected = () => hud.addCoin();
 
   mario.setPosition(45, 174);
   level.entities.add(mario);
@@ -71,8 +77,10 @@ async function main() {
   }
 
   // ── 2. Stato Mario ─────────────────────────────────────────────────
-  let marioAlive   = true;
-  let marioDeadTimer = 0;
+  let marioAlive      = true;
+  let marioDeadTimer  = 0;
+  let invincibleTimer = 0; // invincibilità temporanea dopo rimpicciolimento
+  const INVINCIBLE_DURATION = 2; // secondi di invincibilità dopo danno
 
   // ── 3. Camera ──────────────────────────────────────────────────────
   const camera = new Camera(mario, levelWidth, 240);
@@ -139,24 +147,23 @@ async function main() {
   // ── 7. Morte Mario ─────────────────────────────────────────────────
   function killMario(cause) {
     if (!marioAlive) return;
-    marioAlive = false;
-    marioDeadTimer = 3; // secondi prima del respawn
+    if (invincibleTimer > 0) return; // protetto dopo un danno
+    marioAlive     = false;
+    marioDeadTimer = 3; // secondi animazione prima del Game Over
 
     mario.velocity.x = 0;
-    mario.velocity.y = -400; // balzo verso l'alto
+    mario.velocity.y = -400;
     mario.jump.onGround = false;
-
-    // Disabilita collisioni tile per Mario morto (traversa il pavimento)
     mario._dead = true;
 
-    hud.loseLife();
     deathSound.currentTime = 0;
-    deathSound.play().catch(() => {}); // catch per autoplay policy
+    deathSound.play().catch(() => {});
   }
 
   // ── 8. Collisione Mario ↔ Goomba ──────────────────────────────────
   function checkGoombaCollisions(marioVelY = mario.velocity.y) {
     if (!marioAlive) return;
+    if (invincibleTimer > 0) return; // invincibile → ignora danni
 
     for (const entity of level.entities) {
       if (!entity.isGoomba || entity.dead) continue;
@@ -192,19 +199,17 @@ async function main() {
   }
 
   // ── 9. Rimpicciolimento Mario ──────────────────────────────────────
-  let isShrinking = false;
   function shrinkMario() {
-    if (isShrinking) return;
-    isShrinking = true;
+    if (invincibleTimer > 0) return; // già in stato di grazia → ignora
 
-    // Riposiziona in basso (hitbox piccola)
     mario.isBig = false;
+    mario.isPoweringUp = false;
     const oldBottom = mario.position.y + mario.size.y;
     mario.size.y = 16;
     mario.position.y = oldBottom - mario.size.y;
 
-    // Breve invincibilità
-    setTimeout(() => { isShrinking = false; }, 1500);
+    // Invincibilità temporanea per evitare danni doppi
+    invincibleTimer = INVINCIBLE_DURATION;
   }
 
   // ── 10. Render ─────────────────────────────────────────────────────
@@ -219,6 +224,10 @@ async function main() {
     // ── HUD sopra tutto ──────────────────────────────────────────
     hud.draw(ctx);
     ctx.restore();
+
+    // ── Lampeggio Mario durante invincibilità ────────────────────
+    // Passa il timer all'entità Mario così il layer sprite può lampeggiarlo
+    mario._invincibleTimer = invincibleTimer;
 
     // ── Game Over overlay ────────────────────────────────────────
     if (!marioAlive && marioDeadTimer <= 0) {
@@ -244,13 +253,21 @@ async function main() {
     if (!marioAlive) {
       marioDeadTimer -= deltaTime;
 
-      // Durante la morte Mario vola per aria (solo gravità, niente tile)
+      // Animazione morte: Mario vola in aria senza tile
       mario.velocity.y += 1200 * deltaTime;
       mario.position.y += mario.velocity.y * deltaTime;
 
       camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);
       render();
+
+      // Animazione finita → Game Over fermo (1 sola vita)
       return;
+    }
+
+    // ── Countdown invincibilità post-respawn ─────────────────────
+    if (invincibleTimer > 0) {
+      invincibleTimer -= deltaTime;
+      if (invincibleTimer < 0) invincibleTimer = 0;
     }
 
     // ── Aggiorna entità ──────────────────────────────────────────
@@ -312,17 +329,14 @@ async function main() {
 
     // ── Raccolta monete / funghi + pulizia entità morte ──────────
     for (const entity of [...level.entities]) {
-      if (entity.isAlive && !entity.isAlive()) {
+      // ① Prima controlla collisione con Mario (anche se la moneta sta scadendo)
+      if (entity.onCollect && checkCollision(mario, entity)) {
+        entity.onCollect(mario);
         level.entities.delete(entity);
         continue;
       }
-      if (!entity.onCollect) continue;
-      if (checkCollision(mario, entity)) {
-        entity.onCollect(mario);
-        // ── Aggiorna HUD ─────────────────────────────────────────
-        if (!entity.isGoomba && !entity.isMushroom) {
-          hud.addCoin(); // moneta raccolta
-        }
+      // ② Poi elimina entità morte/scadute
+      if (entity.isAlive && !entity.isAlive()) {
         level.entities.delete(entity);
       }
     }

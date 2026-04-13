@@ -50,7 +50,10 @@ export async function createQuestionBlock(level, type = "coin") {
     if (block.type === "coin") {
       // ── Moneta ───────────────────────────────────────────────────
       const coin = new Coin(block.position.x, block.position.y - 16);
-      coin.onCollect(); // suono
+      coin.onCollect(); // suono immediato
+      coin.onCollect = null; // disabilita raccolta manuale — già contata
+      // Conta subito la moneta tramite callback sul livello
+      if (level && level.onCoinCollected) level.onCoinCollected();
       if (level && level.toSpawn) level.toSpawn.push(coin);
 
     } else if (block.type === "mushroom") {
