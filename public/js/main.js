@@ -13,6 +13,7 @@ import { checkCollision, loadCoinSprites } from "./coin.js";
 import CoinStable from "./coinStable.js";
 import { createGoomba } from "./goomba.js";
 import HUD from "./hud.js";
+import TitleScreen from "./titleScreen.js";
 
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
@@ -34,6 +35,9 @@ const JUMP  = 32;
 const deathSound = new Audio("../sounds/mario-death.ogg");
 
 async function main() {
+  // ── 0. Title Screen ────────────────────────────────────────────────
+  await showTitleScreen();
+
   // ── 1. Entità ──────────────────────────────────────────────────────
   const mario = await createMario();
   const level = await loadLevel("1-1", mario);
@@ -354,6 +358,30 @@ async function main() {
   };
 
   timer.start();
+}
+
+function showTitleScreen() {
+  return new Promise((resolve) => {
+    const title = new TitleScreen(canvas, ctx, scale);
+    title.load().then(() => {
+      title.onStart = () => {
+        title.destroy();
+        resolve();
+      };
+
+      // Loop della title screen
+      let lastTime = 0;
+      function titleLoop(time) {
+        if (!title.active) return; // uscita → avvia gioco
+        const delta = lastTime ? (time - lastTime) / 1000 : 0;
+        lastTime = time;
+        title.update(delta);
+        title.draw();
+        requestAnimationFrame(titleLoop);
+      }
+      requestAnimationFrame(titleLoop);
+    });
+  });
 }
 
 main();
