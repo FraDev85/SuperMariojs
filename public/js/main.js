@@ -12,6 +12,7 @@ import {
 import { checkCollision, loadCoinSprites } from "./coin.js";
 import CoinStable from "./coinStable.js";
 import { createGoomba } from "./goomba.js";
+import HUD from "./hud.js";
 
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
@@ -37,6 +38,10 @@ async function main() {
   const mario = await createMario();
   const level = await loadLevel("1-1", mario);
   await loadCoinSprites();
+
+  // ── HUD ───────────────────────────────────────────────────────────
+  const hud = new HUD();
+  await hud.load();
 
   mario.setPosition(45, 174);
   level.entities.add(mario);
@@ -144,6 +149,7 @@ async function main() {
     // Disabilita collisioni tile per Mario morto (traversa il pavimento)
     mario._dead = true;
 
+    hud.loseLife();
     deathSound.currentTime = 0;
     deathSound.play().catch(() => {}); // catch per autoplay policy
   }
@@ -168,6 +174,7 @@ async function main() {
 
       if (isStomp) {
         entity.stomp();
+        hud.addScore(100); // 100 punti per Goomba calpestato
         // Rimbalzino di Mario dopo lo stomp
         mario.velocity.y = -200;
         mario.jump.onGround = false;
@@ -209,6 +216,8 @@ async function main() {
     ctx.save();
     ctx.scale(scale, scale);
     level.comp.layers.forEach((layer) => layer(ctx));
+    // ── HUD sopra tutto ──────────────────────────────────────────
+    hud.draw(ctx);
     ctx.restore();
 
     // ── Game Over overlay ────────────────────────────────────────
@@ -310,6 +319,10 @@ async function main() {
       if (!entity.onCollect) continue;
       if (checkCollision(mario, entity)) {
         entity.onCollect(mario);
+        // ── Aggiorna HUD ─────────────────────────────────────────
+        if (!entity.isGoomba && !entity.isMushroom) {
+          hud.addCoin(); // moneta raccolta
+        }
         level.entities.delete(entity);
       }
     }
@@ -322,6 +335,7 @@ async function main() {
     cameraLeftBound = Math.max(cameraLeftBound, camera.position.x);
 
     applyBounds();
+    hud.update(deltaTime);
     render();
   };
 
