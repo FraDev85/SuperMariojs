@@ -18,21 +18,23 @@ import TitleScreen from "./titleScreen.js";
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
 
-const INTERNAL_WIDTH  = 256;
+const INTERNAL_WIDTH = 256;
 const INTERNAL_HEIGHT = 240;
 const scale = Math.min(
-  canvas.width  / INTERNAL_WIDTH,
+  canvas.width / INTERNAL_WIDTH,
   canvas.height / INTERNAL_HEIGHT,
 );
 
 ctx.imageSmoothingEnabled = false;
-
-const LEFT  = 37;
+const powerUPDown = new Audio("../sounds/power-up-consume.ogg");
+powerUPDown.volume = 0.5;
+const LEFT = 37;
 const RIGHT = 39;
-const JUMP  = 32;
+const JUMP = 32;
 
 // ── Audio morte Mario ──────────────────────────────────────────────
-const deathSound = new Audio("../sounds/mario-death.ogg");
+const deathSound = new Audio("../sounds/die.ogg");
+deathSound.volume = 0.5;
 
 async function main() {
   // ── 0. Title Screen ────────────────────────────────────────────────
@@ -60,7 +62,7 @@ async function main() {
 
   // ── Monete statiche ────────────────────────────────────────────────
   const stableCoins = [
-    new CoinStable(80,  160),
+    new CoinStable(80, 160),
     new CoinStable(150, 120),
     new CoinStable(200, 140),
   ];
@@ -81,8 +83,8 @@ async function main() {
   }
 
   // ── 2. Stato Mario ─────────────────────────────────────────────────
-  let marioAlive      = true;
-  let marioDeadTimer  = 0;
+  let marioAlive = true;
+  let marioDeadTimer = 0;
   let invincibleTimer = 0; // invincibilità temporanea dopo rimpicciolimento
   const INVINCIBLE_DURATION = 2; // secondi di invincibilità dopo danno
 
@@ -92,7 +94,10 @@ async function main() {
   let cameraLeftBound = camera.position.x;
 
   // ── 4. Layer ───────────────────────────────────────────────────────
-  const backgroundLayer = createBackgroundLayers(level, level.backgroundSprites);
+  const backgroundLayer = createBackgroundLayers(
+    level,
+    level.backgroundSprites,
+  );
   level.comp.layers.push((ctx) => backgroundLayer(ctx, camera));
 
   const spriteLayer = createSpriteLayer(level.entities);
@@ -100,13 +105,13 @@ async function main() {
 
   // ── 5. Input ───────────────────────────────────────────────────────
   const keyboard = new KeyboardState();
-  keyboard.addMapping(LEFT,  () => {});
+  keyboard.addMapping(LEFT, () => {});
   keyboard.addMapping(RIGHT, () => {});
   keyboard.addMapping(JUMP, (keyState) => {
     if (!marioAlive) return;
     if (mario.isPoweringUp) return;
     if (keyState) mario.jump.start(mario);
-    else          mario.jump.cancel(mario);
+    else mario.jump.cancel(mario);
   });
   keyboard.listenTo(window);
 
@@ -116,7 +121,7 @@ async function main() {
       return;
     }
 
-    const left  = keyboard.keyStates.get(LEFT)  === 1;
+    const left = keyboard.keyStates.get(LEFT) === 1;
     const right = keyboard.keyStates.get(RIGHT) === 1;
 
     if (left && !right) {
@@ -152,16 +157,13 @@ async function main() {
   function killMario(cause) {
     if (!marioAlive) return;
     if (invincibleTimer > 0) return; // protetto dopo un danno
-    marioAlive     = false;
+    marioAlive = false;
     marioDeadTimer = 3; // secondi animazione prima del Game Over
 
     mario.velocity.x = 0;
     mario.velocity.y = -400;
     mario.jump.onGround = false;
     mario._dead = true;
-
-    deathSound.currentTime = 0;
-    deathSound.play().catch(() => {});
   }
 
   // ── 8. Collisione Mario ↔ Goomba ──────────────────────────────────
@@ -178,10 +180,11 @@ async function main() {
       // la velocity come discriminante. Usiamo l'overlap verticale:
       // - overlap piccolo (<=6px) + Mario stava cadendo = entrato dall'alto
       // - overlap grande = Mario era gia di fianco al Goomba
-      const marioBottom     = mario.position.y + mario.size.y;
-      const goombaTop       = entity.position.y;
+      const marioBottom = mario.position.y + mario.size.y;
+      const goombaTop = entity.position.y;
       const verticalOverlap = marioBottom - goombaTop;
-      const isStomp         = marioVelY > 0 && verticalOverlap >= 0 && verticalOverlap <= 6;
+      const isStomp =
+        marioVelY > 0 && verticalOverlap >= 0 && verticalOverlap <= 6;
 
       if (isStomp) {
         entity.stomp();
@@ -211,6 +214,9 @@ async function main() {
     const oldBottom = mario.position.y + mario.size.y;
     mario.size.y = 16;
     mario.position.y = oldBottom - mario.size.y;
+    powerUPDown.currentTime = 0;
+
+    powerUPDown.play().catch(() => {});
 
     // Invincibilità temporanea per evitare danni doppi
     invincibleTimer = INVINCIBLE_DURATION;
@@ -242,7 +248,11 @@ async function main() {
       ctx.textAlign = "center";
       ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
       ctx.font = "16px monospace";
-      ctx.fillText("Premi F5 per ricominciare", canvas.width / 2, canvas.height / 2 + 40);
+      ctx.fillText(
+        "Premi F5 per ricominciare",
+        canvas.width / 2,
+        canvas.height / 2 + 40,
+      );
     }
   }
 
@@ -325,7 +335,7 @@ async function main() {
 
       if (prevVelY > 0 && entity.velocity.y === 0) {
         if (entity.jump) {
-          entity.jump.onGround  = true;
+          entity.jump.onGround = true;
           entity.jump.isJumping = false;
         }
       }
