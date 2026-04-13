@@ -20,6 +20,9 @@
   "entities": [
     { "type": "questionBlock", "position": [192, 128], "content": "mushroom" },
     { "type": "questionBlock", "position": [352, 112] },
-    { "type": "questionBlock", "position": [512, 128] }
+    { "type": "questionBlock", "position": [512, 128] },
+    { "type": "goomba", "position": [400, 174] },
+    { "type": "goomba", "position": [600, 174] },
+    { "type": "goomba", "position": [900, 174] }
   ]
 }
