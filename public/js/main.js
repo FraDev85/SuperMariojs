@@ -69,7 +69,7 @@ async function main() {
   stableCoins.forEach((coin) => level.entities.add(coin));
 
   // ── Goomba dal livello ─────────────────────────────────────────────
-  // Posizioni definite qui; in futuro puoi spostarle nel JSON del livello
+
   const goombaSpawns = [
     { x: 400, y: 174 },
     { x: 600, y: 174 },
@@ -85,8 +85,8 @@ async function main() {
   // ── 2. Stato Mario ─────────────────────────────────────────────────
   let marioAlive = true;
   let marioDeadTimer = 0;
-  let invincibleTimer = 0; // invincibilità temporanea dopo rimpicciolimento
-  const INVINCIBLE_DURATION = 2; // secondi di invincibilità dopo danno
+  let invincibleTimer = 0;
+  const INVINCIBLE_DURATION = 2;
 
   // ── 3. Camera ──────────────────────────────────────────────────────
   const camera = new Camera(mario, levelWidth, 240);
@@ -158,8 +158,7 @@ async function main() {
     if (!marioAlive) return;
     if (invincibleTimer > 0) return; // protetto dopo un danno
     marioAlive = false;
-    marioDeadTimer = 3; // secondi animazione prima del Game Over
-
+    marioDeadTimer = 3;
     mario.velocity.x = 0;
     mario.velocity.y = -400;
     mario.jump.onGround = false;
@@ -178,10 +177,6 @@ async function main() {
       if (!checkCollision(mario, entity)) continue;
 
       // ── Stomp: Mario colpisce il Goomba dall'alto ──────────────
-      // La gravità accumula velocity.y anche a terra, quindi non basta
-      // la velocity come discriminante. Usiamo l'overlap verticale:
-      // - overlap piccolo (<=6px) + Mario stava cadendo = entrato dall'alto
-      // - overlap grande = Mario era gia di fianco al Goomba
       const marioBottom = mario.position.y + mario.size.y;
       const goombaTop = entity.position.y;
       const verticalOverlap = marioBottom - goombaTop;
@@ -198,7 +193,6 @@ async function main() {
       } else {
         // ── Tocco laterale → Mario muore (o perde power-up) ────────
         if (mario.isBig) {
-          // Mario grande → diventa piccolo
           shrinkMario();
         } else {
           killMario("goomba");
@@ -207,9 +201,9 @@ async function main() {
     }
   }
 
-  // ── 9. Rimpicciolimento Mario ──────────────────────────────────────
+  // ── 9. shrink Mario ──────────────────────────────────────
   function shrinkMario() {
-    if (invincibleTimer > 0) return; // già in stato di grazia → ignora
+    if (invincibleTimer > 0) return;
 
     mario.isBig = false;
     mario.isPoweringUp = false;
@@ -219,8 +213,6 @@ async function main() {
     powerUPDown.currentTime = 0;
 
     powerUPDown.play().catch(() => {});
-
-    // Invincibilità temporanea per evitare danni doppi
     invincibleTimer = INVINCIBLE_DURATION;
   }
 
@@ -237,8 +229,7 @@ async function main() {
     hud.draw(ctx);
     ctx.restore();
 
-    // ── Lampeggio Mario durante invincibilità ────────────────────
-    // Passa il timer all'entità Mario così il layer sprite può lampeggiarlo
+    // Flash mario
     mario._invincibleTimer = invincibleTimer;
 
     // ── Game Over overlay ────────────────────────────────────────
@@ -251,7 +242,7 @@ async function main() {
       ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
       ctx.font = "16px monospace";
       ctx.fillText(
-        "Premi F5 per ricominciare",
+        "Press F5 for restart",
         canvas.width / 2,
         canvas.height / 2 + 40,
       );
@@ -275,8 +266,6 @@ async function main() {
 
       camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);
       render();
-
-      // Animazione finita → Game Over fermo (1 sola vita)
       return;
     }
 
@@ -289,11 +278,9 @@ async function main() {
     // ── Aggiorna entità ──────────────────────────────────────────
     level.update(deltaTime);
 
-    // Salva la velocity.y di Mario PRIMA che checkY la azzeri —
-    // serve per rilevare correttamente lo stomp sui Goomba
     const marioVelYBeforeCheck = mario.velocity.y;
 
-    // ── Collisioni tile ──────────────────────────────────────────
+    // ── Collision tile ──────────────────────────────────────────
     for (const entity of level.entities) {
       if (!entity.position || !entity.velocity) continue;
       if (entity.static) continue;
@@ -330,7 +317,7 @@ async function main() {
         continue;
       }
 
-      // ── Mario e entità normali ────────────────────────────────────
+      // ── Mario and normal entity ────────────────────────────────────
       level.tileCollider.checkX(entity);
       const prevVelY = entity.velocity.y;
       level.tileCollider.checkY(entity);
@@ -343,21 +330,19 @@ async function main() {
       }
     }
 
-    // ── Raccolta monete / funghi + pulizia entità morte ──────────
+    // ── harvest coins ──────────
     for (const entity of [...level.entities]) {
-      // ① Prima controlla collisione con Mario (anche se la moneta sta scadendo)
       if (entity.onCollect && checkCollision(mario, entity)) {
         entity.onCollect(mario);
         level.entities.delete(entity);
         continue;
       }
-      // ② Poi elimina entità morte/scadute
       if (entity.isAlive && !entity.isAlive()) {
         level.entities.delete(entity);
       }
     }
 
-    // ── Collisioni Mario ↔ Goomba ────────────────────────────────
+    // ── Collision Mario and Goomba ────────────────────────────────
     checkGoombaCollisions(marioVelYBeforeCheck);
 
     // ── Camera ───────────────────────────────────────────────────
