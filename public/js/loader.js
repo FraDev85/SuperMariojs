@@ -4,6 +4,7 @@ import TileCollider from "./tileCollider.js";
 import { createQuestionBlock } from "./questionBlock.js";
 import Coin from "./coin.js";
 import CoinStable from "./coinStable.js";
+import { createGoomba } from "./goomba.js";
 
 // ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
@@ -20,11 +21,11 @@ export async function loadBackgroundSprites(tileSize = 16) {
   const image = await loadImage("/img/tiles.png");
 
   const tileMap = {
-    sky: [10, 7],
-    ground: [0, 0],
-    platform: [1, 0],
-    questionBlock: [4, 0],
-    coin: [15, 0],
+    sky:           [10, 7],
+    ground:        [0,  0],
+    platform:      [1,  0],
+    questionBlock: [4,  0],
+    coin:          [15, 0],
   };
 
   const sprites = {};
@@ -98,8 +99,8 @@ async function createEntities(level, entities = []) {
       const coin = new CoinStable(px, py);
       level.entities.add(coin);
     }
+
     if (type === "goomba") {
-      const { createGoomba } = await import("./goomba.js");
       const goomba = await createGoomba();
       goomba.setPosition(px, py);
       level.entities.add(goomba);

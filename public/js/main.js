@@ -11,7 +11,6 @@ import {
 } from "./layers.js";
 import { checkCollision, loadCoinSprites } from "./coin.js";
 import CoinStable from "./coinStable.js";
-import { createGoomba } from "./goomba.js";
 import HUD from "./hud.js";
 import TitleScreen from "./titleScreen.js";
 
@@ -67,20 +66,6 @@ async function main() {
     new CoinStable(200, 140),
   ];
   stableCoins.forEach((coin) => level.entities.add(coin));
-
-  // ── Goomba dal livello ─────────────────────────────────────────────
-
-  const goombaSpawns = [
-    { x: 400, y: 174 },
-    { x: 600, y: 174 },
-    { x: 900, y: 174 },
-  ];
-
-  for (const { x, y } of goombaSpawns) {
-    const goomba = await createGoomba();
-    goomba.setPosition(x, y);
-    level.entities.add(goomba);
-  }
 
   // ── 2. Stato Mario ─────────────────────────────────────────────────
   let marioAlive = true;
