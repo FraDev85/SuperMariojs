@@ -23,6 +23,8 @@
     { "type": "questionBlock", "position": [512, 128] },
     { "type": "goomba", "position": [400, 174] },
     { "type": "goomba", "position": [600, 174] },
-    { "type": "goomba", "position": [900, 174] }
+    { "type": "goomba", "position": [900, 174] },
+    { "type": "koopa",  "position": [500, 158] },
+    { "type": "koopa",  "position": [750, 158] }
   ]
 }

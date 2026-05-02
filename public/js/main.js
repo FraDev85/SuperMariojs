@@ -186,7 +186,47 @@ async function main() {
     }
   }
 
-  // ── 9. shrink Mario ──────────────────────────────────────
+  // ── 9. Collisione Mario ↔ Koopa ───────────────────────────────────
+  function checkKoopaCollisions(marioVelY = mario.velocity.y) {
+    if (!marioAlive) return;
+
+    for (const entity of level.entities) {
+      if (!entity.isKoopa || !entity.alive) continue;
+      if (!checkCollision(mario, entity)) continue;
+
+      const marioBottom = mario.position.y + mario.size.y;
+      const entityTop   = entity.position.y;
+      const overlap     = marioBottom - entityTop;
+      const isStomp     = marioVelY > 0 && overlap >= 0 && overlap <= 8;
+
+      if (isStomp) {
+        entity.stomp();
+        hud.addScore(entity.state === "shell" ? 400 : 100);
+        mario.velocity.y  = -200;
+        mario.jump.onGround  = false;
+        mario.jump.isJumping = true;
+
+        // orienta il guscio nella direzione opposta a Mario
+        if (entity.state === "sliding") {
+          entity.facing = mario.position.x < entity.position.x ? 1 : -1;
+        }
+      } else {
+        // tocco laterale
+        if (entity.state === "sliding" || entity.state === "walking") {
+          if (invincibleTimer > 0) continue;
+          if (mario.isBig) shrinkMario();
+          else killMario("koopa");
+        } else if (entity.state === "shell") {
+          // calcia il guscio nella direzione da cui arriva Mario
+          entity.facing = mario.position.x < entity.position.x ? 1 : -1;
+          entity.stomp(); // entra in "sliding"
+          hud.addScore(400);
+        }
+      }
+    }
+  }
+
+  // ── 10. shrink Mario ──────────────────────────────────────
   function shrinkMario() {
     if (invincibleTimer > 0) return;
 
@@ -286,6 +326,43 @@ async function main() {
         continue;
       }
 
+      // ── Koopa ────────────────────────────────────────────────────
+      if (entity.isKoopa) {
+        if (!entity.alive) continue;
+
+        // guscio fermo: non si muove, solo timer
+        if (entity.state !== "shell") {
+          entity.position.x += entity.velocity.x * deltaTime;
+          const prevVelX = entity.velocity.x;
+          level.tileCollider.checkX(entity);
+          if (prevVelX !== 0 && entity.velocity.x === 0) {
+            entity.reverse();
+          }
+        }
+
+        entity.position.y += entity.velocity.y * deltaTime;
+        level.tileCollider.checkY(entity);
+
+        // guscio che scivola: colpisce i Goomba
+        if (entity.state === "sliding") {
+          for (const other of level.entities) {
+            if (other === entity) continue;
+            if (!other.isGoomba && !other.isKoopa) continue;
+            if (other.isGoomba && other.dead) continue;
+            if (other.isKoopa && (!other.alive || other === entity)) continue;
+            if (!checkCollision(entity, other)) continue;
+
+            if (other.isGoomba) other.stomp();
+            if (other.isKoopa) {
+              // due gusci che si scontrano si eliminano a vicenda
+              other.alive = false;
+              entity.alive = false;
+            }
+          }
+        }
+        continue;
+      }
+
       // ── Fungo ────────────────────────────────────────────────────
       if (entity.isMushroom) {
         if (entity.emerging) continue;
@@ -329,6 +406,9 @@ async function main() {
 
     // ── Collision Mario and Goomba ────────────────────────────────
     checkGoombaCollisions(marioVelYBeforeCheck);
+
+    // ── Collision Mario and Koopa ─────────────────────────────────
+    checkKoopaCollisions(marioVelYBeforeCheck);
 
     // ── Camera ───────────────────────────────────────────────────
     camera.update(INTERNAL_WIDTH, INTERNAL_HEIGHT);

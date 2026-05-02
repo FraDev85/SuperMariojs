@@ -5,6 +5,7 @@ import { createQuestionBlock } from "./questionBlock.js";
 import Coin from "./coin.js";
 import CoinStable from "./coinStable.js";
 import { createGoomba } from "./goomba.js";
+import { createKoopa } from "./koopa.js";
 
 // ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
@@ -104,6 +105,12 @@ async function createEntities(level, entities = []) {
       const goomba = await createGoomba();
       goomba.setPosition(px, py);
       level.entities.add(goomba);
+    }
+
+    if (type === "koopa") {
+      const koopa = await createKoopa();
+      koopa.setPosition(px, py);
+      level.entities.add(koopa);
     }
   }
 }
