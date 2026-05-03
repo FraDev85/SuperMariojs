@@ -47,7 +47,7 @@ export default class TileCollider {
     entity.velocity.x = 0;
   }
 
-  // ───────────────────────────── Vertical Collision ───────────────
+  // ───────────────────────────── COLLISIONE VERTICALE ───────────────
   checkY(entity) {
     const { x, y } = entity.position;
     const { x: w, y: h } = entity.size;
@@ -65,15 +65,23 @@ export default class TileCollider {
       const tile = this.getTileByIndex(tileX, tileY);
       if (!this._isSolid(tile)) continue;
 
+      // 🎯 HIT DA SOTTO (question block o brick)
       if (
         side === "top" &&
-        entity.velocity.y < 0 &&
-        tile.block &&
-        !tile.block.hit
+        entity.velocity.y < 0
       ) {
-        console.log("Bump rilevato sul blocco in:", tile.block.position);
-        tile.block.triggerBump(this.level);
-        entity.velocity.y = 20; // piccolo rimbalzo
+        // Question block
+        if (tile.block && !tile.block.hit && tile.name === "questionBlock") {
+          console.log("Bump rilevato sul blocco in:", tile.block.position);
+          tile.block.triggerBump(this.level);
+          entity.velocity.y = 20;
+        }
+
+        // Brick block
+        if (tile.block && tile.name === "brick") {
+          tile.block.triggerBump(this.level, entity);
+          entity.velocity.y = 20;
+        }
       }
 
       this._resolveY(entity, tileY, side);
@@ -94,7 +102,7 @@ export default class TileCollider {
     entity.velocity.y = 0;
   }
 
-  // ───────────────────────────── DEBUG Coins ─────────────
+  // ───────────────────────────── DEBUG MONETE ─────────────
   debugEntities() {
     for (const e of this.level.entities) {
       if (e.pos && e.isAlive && !e.isAlive()) {

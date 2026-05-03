@@ -6,9 +6,10 @@ import Coin from "./coin.js";
 import CoinStable from "./coinStable.js";
 import { createGoomba } from "./goomba.js";
 import { createKoopa } from "./koopa.js";
+import { createBrickBlock } from "./brickBlock.js";
 import { loadDecorationSprites, createDecorationLayer } from "./decorations.js";
 
-// ── Load Image ───────────────────────────────────────────────
+// ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -18,7 +19,7 @@ export function loadImage(url) {
   });
 }
 
-// ── Load background sprites ─────────────────────────────────────
+// ── Carica background sprites ─────────────────────────────────────
 export async function loadBackgroundSprites(tileSize = 16) {
   const image = await loadImage("/img/tiles.png");
 
@@ -60,7 +61,7 @@ export async function loadBackgroundSprites(tileSize = 16) {
   };
 }
 
-// ── fill tiles  Background ────────────────────────────────────────
+// ── Popola tiles di sfondo ────────────────────────────────────────
 function createTiles(level, backgrounds) {
   backgrounds.forEach((bg) => {
     bg.ranges.forEach(([x1, x2, y1, y2]) => {
@@ -73,7 +74,7 @@ function createTiles(level, backgrounds) {
   });
 }
 
-// ── Load entity from JSON ────────────────────────────────────────
+// ── Carica entità dal JSON ────────────────────────────────────────
 async function createEntities(level, entities = []) {
   for (const {
     type,
@@ -113,11 +114,23 @@ async function createEntities(level, entities = []) {
       koopa.setPosition(px, py);
       level.entities.add(koopa);
     }
+
+    if (type === "brick") {
+      const brick = await createBrickBlock();
+      brick.setPosition(px, py);
+      level.entities.add(brick);
+      // registra nella matrice tile così è solida
+      const tileX = Math.floor(px / 16);
+      const tileY = Math.floor(py / 16);
+      level.tiles.set(tileX, tileY, { name: "brick", block: brick });
+    }
   }
 }
 
-// ── Load livell ────────────────────────────────────────────────
-
+// ── Carica livello ────────────────────────────────────────────────
+// Accetta un'entità opzionale (mario) a cui collegare il tileCollider.
+// In questo modo mario.update() può verificare le tile sopra di lui
+// durante la trasformazione power-up senza causare invasione delle tile.
 export async function loadLevel(name, playerEntity = null) {
   const res = await fetch(`/levels/${name}.json`);
   const levelSpec = await res.json();
@@ -126,7 +139,7 @@ export async function loadLevel(name, playerEntity = null) {
 
   level.backgroundSprites = await loadBackgroundSprites();
 
-  // ── Decoration────────────────────────
+  // ── Decorazioni (nuvole, alberi, cespugli) ────────────────────────
   const decorSprites = await loadDecorationSprites();
   const decorations  = levelSpec.decorations || [];
   level.decorationLayer = createDecorationLayer(decorations, decorSprites);
@@ -137,7 +150,9 @@ export async function loadLevel(name, playerEntity = null) {
 
   level.tileCollider = new TileCollider(level.tiles, 16, level);
 
-  // ── Link tile to player ──────────────────────────
+  // ── Collega il tileCollider al giocatore ──────────────────────────
+  // Necessario per il controllo anti-invasione durante il power-up:
+  // mario._tileCollider viene letto in entity.js → mario.update()
   if (playerEntity) {
     playerEntity._tileCollider = level.tileCollider;
   }

@@ -6,6 +6,7 @@ export function createBackgroundLayers(level, sprites) {
     const canvasWidth = ctx.canvas.width;
     const canvasHeight = ctx.canvas.height;
 
+    // ✅ calcola solo le tile visibili nella viewport
     const startCol = Math.floor(camera.position.x / tileSize);
     const endCol = Math.ceil((camera.position.x + canvasWidth) / tileSize);
     const startRow = Math.floor(camera.position.y / tileSize);
@@ -17,6 +18,7 @@ export function createBackgroundLayers(level, sprites) {
         if (!tile) continue;
         if (tile.name === "sky") continue;
         if (tile.name === "questionBlock") continue;
+        if (tile.name === "brick") continue;
 
         sprites.drawTile(
           tile.name,
@@ -35,6 +37,7 @@ export function createSpriteLayer(entities, sprites) {
       ctx.save();
       ctx.translate(-camera.position.x, -camera.position.y);
 
+      // Se l'entità è una moneta, passa gli sprite corretti
       if (entity.isAlive && entity.draw.name === "draw") {
         entity.draw(ctx, sprites); // sprite coins
       } else {
