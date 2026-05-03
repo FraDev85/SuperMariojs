@@ -1,6 +1,13 @@
 {
   "backgrounds": [
-    { "tile": "ground", "ranges": [[0, 200, 18, 20]] },
+    {
+      "tile": "ground",
+      "ranges": [
+        [0, 38, 18, 20],
+        [42, 85, 18, 20],
+        [89, 200, 18, 20]
+      ]
+    },
     {
       "tile": "platform",
       "ranges": [
@@ -12,49 +19,64 @@
         [110, 120, 13, 14],
         [130, 140, 15, 16],
         [150, 160, 14, 15],
-        [170, 180, 12, 13],
-        [190, 200, 14, 15]
+        [170, 180, 12, 13]
       ]
     }
   ],
   "decorations": [
-    { "type": "cloud-big", "x": 64, "y": 28 },
-    { "type": "cloud-small", "x": 180, "y": 16 },
-    { "type": "cloud-big", "x": 340, "y": 36 },
-    { "type": "cloud-small", "x": 460, "y": 20 },
-    { "type": "cloud-big", "x": 600, "y": 24 },
-    { "type": "cloud-small", "x": 730, "y": 14 },
-    { "type": "cloud-big", "x": 860, "y": 32 },
-    { "type": "cloud-small", "x": 980, "y": 18 },
-    { "type": "cloud-big", "x": 1100, "y": 26 },
-    { "type": "cloud-small", "x": 1220, "y": 20 },
+    { "type": "cloud-big", "x": 48, "y": 24 },
+    { "type": "cloud-small", "x": 160, "y": 14 },
+    { "type": "cloud-big", "x": 280, "y": 32 },
+    { "type": "cloud-small", "x": 380, "y": 18 },
+    { "type": "cloud-big", "x": 480, "y": 26 },
+    { "type": "cloud-small", "x": 580, "y": 14 },
+    { "type": "cloud-big", "x": 680, "y": 30 },
+    { "type": "cloud-small", "x": 780, "y": 20 },
+    { "type": "cloud-big", "x": 880, "y": 24 },
+    { "type": "cloud-small", "x": 980, "y": 16 },
+    { "type": "cloud-big", "x": 1080, "y": 28 },
+    { "type": "cloud-small", "x": 1180, "y": 14 },
+    { "type": "cloud-big", "x": 1280, "y": 22 },
+    { "type": "cloud-small", "x": 1380, "y": 18 },
     { "type": "bush", "x": 32, "y": 272 },
-    { "type": "bush", "x": 258, "y": 272 },
-    { "type": "bush", "x": 512, "y": 272 },
-    { "type": "bush", "x": 768, "y": 272 },
-    { "type": "bush", "x": 1024, "y": 272 },
+    { "type": "bush", "x": 64, "y": 272 },
     { "type": "bush", "x": 128, "y": 272 },
-    { "type": "bush", "x": 160, "y": 272 },
+    { "type": "bush", "x": 256, "y": 272 },
+    { "type": "bush", "x": 288, "y": 272 },
     { "type": "bush", "x": 384, "y": 272 },
-    { "type": "bush", "x": 416, "y": 272 },
-    { "type": "bush", "x": 640, "y": 272 },
-    { "type": "bush", "x": 672, "y": 272 },
-    { "type": "bush", "x": 896, "y": 272 },
-    { "type": "bush", "x": 928, "y": 272 }
+    { "type": "bush", "x": 480, "y": 272 },
+    { "type": "bush", "x": 512, "y": 272 },
+    { "type": "bush", "x": 960, "y": 272 },
+    { "type": "bush", "x": 1024, "y": 272 },
+    { "type": "bush", "x": 1120, "y": 272 },
+    { "type": "bush", "x": 1216, "y": 272 }
   ],
   "entities": [
     { "type": "questionBlock", "position": [192, 128], "content": "mushroom" },
     { "type": "questionBlock", "position": [352, 112] },
     { "type": "questionBlock", "position": [512, 128] },
+    { "type": "questionBlock", "position": [800, 112] },
+    { "type": "questionBlock", "position": [1056, 128] },
     { "type": "brick", "position": [208, 128] },
     { "type": "brick", "position": [224, 128] },
     { "type": "brick", "position": [240, 128] },
     { "type": "brick", "position": [368, 112] },
     { "type": "brick", "position": [384, 112] },
-    { "type": "goomba", "position": [400, 174] },
-    { "type": "goomba", "position": [600, 174] },
-    { "type": "goomba", "position": [900, 174] },
-    { "type": "koopa", "position": [500, 158] },
-    { "type": "koopa", "position": [750, 158] }
+    { "type": "brick", "position": [816, 112] },
+    { "type": "brick", "position": [832, 112] },
+    { "type": "brick", "position": [1072, 128] },
+    { "type": "brick", "position": [1088, 128] },
+    { "type": "goomba", "position": [280, 174] },
+    { "type": "goomba", "position": [300, 174] },
+    { "type": "goomba", "position": [480, 174] },
+    { "type": "goomba", "position": [700, 174] },
+    { "type": "goomba", "position": [720, 174] },
+    { "type": "goomba", "position": [950, 174] },
+    { "type": "goomba", "position": [1100, 174] },
+    { "type": "goomba", "position": [1200, 174] },
+    { "type": "koopa", "position": [400, 158] },
+    { "type": "koopa", "position": [600, 158] },
+    { "type": "koopa", "position": [860, 158] },
+    { "type": "koopa", "position": [1150, 158] }
   ]
 }
