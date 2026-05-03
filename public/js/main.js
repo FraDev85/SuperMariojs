@@ -31,18 +31,31 @@ const LEFT = 37;
 const RIGHT = 39;
 const JUMP = 32;
 
-// ── Audio Died Mario ──────────────────────────────────────────────
+// ── Audio morte Mario ──────────────────────────────────────────────
 const deathSound = new Audio("../sounds/die.ogg");
 deathSound.volume = 0.5;
+
+// ── Musica di sottofondo ───────────────────────────────────────────
+const bgMusic = new Audio("../sounds/overworld.ogg");
+bgMusic.loop   = true;
+bgMusic.volume = 0.4;
+
+// ── Stomp sound ────────────────────────────────────────────────────
+const stompSound = new Audio("../sounds/stomp.ogg");
+stompSound.volume = 0.6;
 
 async function main() {
   // ── 0. Title Screen ────────────────────────────────────────────────
   await showTitleScreen();
 
-  // ── 1. Entity──────────────────────────────────────────────────────
+  // ── 1. Entità ──────────────────────────────────────────────────────
   const mario = await createMario();
   const level = await loadLevel("1-1", mario);
   await loadCoinSprites();
+
+  // ── Avvia musica ───────────────────────────────────────────────────
+  bgMusic.currentTime = 0;
+  bgMusic.play().catch(() => {});
 
   // ── HUD ───────────────────────────────────────────────────────────
   const hud = new HUD();
@@ -67,7 +80,7 @@ async function main() {
   ];
   stableCoins.forEach((coin) => level.entities.add(coin));
 
-  // ── 2. State Mario ─────────────────────────────────────────────────
+  // ── 2. Stato Mario ─────────────────────────────────────────────────
   let marioAlive = true;
   let marioDeadTimer = 0;
   let invincibleTimer = 0;
@@ -137,27 +150,30 @@ async function main() {
       if (mario.velocity.x > 0) mario.velocity.x = 0;
     }
 
-    // Mario Died for fall out of screen 
+    // Morte per caduta fuori schermo
     if (mario.position.y > INTERNAL_HEIGHT + 64) {
       killMario("fall");
     }
   }
 
-  // ── 7. Died Mario ─────────────────────────────────────────────────
+  // ── 7. Morte Mario ─────────────────────────────────────────────────
   function killMario(cause) {
     if (!marioAlive) return;
-    if (invincibleTimer > 0) return; // protetto dopo un danno
+    if (invincibleTimer > 0) return;
     marioAlive = false;
     marioDeadTimer = 3;
     mario.velocity.x = 0;
     mario.velocity.y = -400;
     mario.jump.onGround = false;
     mario._dead = true;
+    // stop musica e avvia suono morte
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
     deathSound.currentTime = 0;
     deathSound.play().catch(() => {});
   }
 
-  // ── 8. Collision Mario ↔ Goomba ──────────────────────────────────
+  // ── 8. Collisione Mario ↔ Goomba ──────────────────────────────────
   function checkGoombaCollisions(marioVelY = mario.velocity.y) {
     if (!marioAlive) return;
     if (invincibleTimer > 0) return; // invincibile → ignora danni
@@ -166,7 +182,7 @@ async function main() {
       if (!entity.isGoomba || entity.dead) continue;
       if (!checkCollision(mario, entity)) continue;
 
-      // ── Mario hit goomba from above──────────────
+      // ── Stomp: Mario colpisce il Goomba dall'alto ──────────────
       const marioBottom = mario.position.y + mario.size.y;
       const goombaTop = entity.position.y;
       const verticalOverlap = marioBottom - goombaTop;
@@ -176,12 +192,13 @@ async function main() {
       if (isStomp) {
         entity.stomp();
         hud.addScore(100);
-        // little jump after hit
+        stompSound.currentTime = 0;
+        stompSound.play().catch(() => {});
         mario.velocity.y = -200;
         mario.jump.onGround = false;
         mario.jump.isJumping = true;
       } else {
-        // shrink Mario ────────
+        // ── Tocco laterale → Mario muore (o perde power-up) ────────
         if (mario.isBig) {
           shrinkMario();
         } else {
@@ -191,7 +208,7 @@ async function main() {
     }
   }
 
-  // ── 9. Collision Mario ↔ Koopa ───────────────────────────────────
+  // ── 9. Collisione Mario ↔ Koopa ───────────────────────────────────
   function checkKoopaCollisions(marioVelY = mario.velocity.y) {
     if (!marioAlive) return;
 
@@ -200,15 +217,17 @@ async function main() {
       if (!checkCollision(mario, entity)) continue;
 
       const marioBottom = mario.position.y + mario.size.y;
-      const entityTop = entity.position.y;
-      const overlap = marioBottom - entityTop;
-      const isStomp = marioVelY > 0 && overlap >= 0 && overlap <= 8;
+      const entityTop   = entity.position.y;
+      const overlap     = marioBottom - entityTop;
+      const isStomp     = marioVelY > 0 && overlap >= 0 && overlap <= 8;
 
       if (isStomp) {
         entity.stomp();
         hud.addScore(entity.state === "shell" ? 400 : 100);
-        mario.velocity.y = -200;
-        mario.jump.onGround = false;
+        stompSound.currentTime = 0;
+        stompSound.play().catch(() => {});
+        mario.velocity.y  = -200;
+        mario.jump.onGround  = false;
         mario.jump.isJumping = true;
 
         if (entity.state === "sliding") {
@@ -216,11 +235,12 @@ async function main() {
         }
       } else {
         if (entity.state === "shell") {
-         // trow shell oppost mario direction
+          // calcia il guscio nella direzione opposta a Mario
           entity.facing = mario.position.x < entity.position.x ? 1 : -1;
           entity.stomp();
           hud.addScore(400);
         } else {
+          // tocco laterale con Koopa che cammina o guscio in corsa
           if (invincibleTimer > 0) continue;
           if (mario.isBig) shrinkMario();
           else killMario("koopa");
@@ -253,7 +273,7 @@ async function main() {
     ctx.save();
     ctx.scale(scale, scale);
     level.comp.layers.forEach((layer) => layer(ctx));
-    // ── HUD over all ──────────────────────────────────────────
+    // ── HUD sopra tutto ──────────────────────────────────────────
     hud.draw(ctx);
     ctx.restore();
 
@@ -284,11 +304,11 @@ async function main() {
     handleInput();
     mario.lastDeltaTime = deltaTime;
 
-    // ── Countdown Died Mario ────────────────────────────────────
+    // ── Countdown morte Mario ────────────────────────────────────
     if (!marioAlive) {
       marioDeadTimer -= deltaTime;
 
-      //  Animation died
+      // Animazione morte: Mario vola in aria senza tile
       mario.velocity.y += 1200 * deltaTime;
       mario.position.y += mario.velocity.y * deltaTime;
 
@@ -297,13 +317,13 @@ async function main() {
       return;
     }
 
-    // ── Countdown invincibility  post-respawn ─────────────────────
+    // ── Countdown invincibilità post-respawn ─────────────────────
     if (invincibleTimer > 0) {
       invincibleTimer -= deltaTime;
       if (invincibleTimer < 0) invincibleTimer = 0;
     }
 
-    // ── update entity──────────────────────────────────────────
+    // ── Aggiorna entità ──────────────────────────────────────────
     level.update(deltaTime);
 
     const marioVelYBeforeCheck = mario.velocity.y;
@@ -345,7 +365,7 @@ async function main() {
         entity.position.y += entity.velocity.y * deltaTime;
         level.tileCollider.checkY(entity);
 
-        // shell hit Goomba
+        // guscio che scivola: colpisce i Goomba
         if (entity.state === "sliding") {
           for (const other of level.entities) {
             if (other === entity) continue;
@@ -364,7 +384,7 @@ async function main() {
         continue;
       }
 
-      // ── Mushroom ────────────────────────────────────────────────────
+      // ── Fungo ────────────────────────────────────────────────────
       if (entity.isMushroom) {
         if (entity.emerging) continue;
 
