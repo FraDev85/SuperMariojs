@@ -47,7 +47,7 @@ export default class TileCollider {
     entity.velocity.x = 0;
   }
 
-  // ───────────────────────────── COLLISIONE VERTICALE ───────────────
+  // ───────────────────────────── Vertical Collision ───────────────
   checkY(entity) {
     const { x, y } = entity.position;
     const { x: w, y: h } = entity.size;
@@ -65,7 +65,6 @@ export default class TileCollider {
       const tile = this.getTileByIndex(tileX, tileY);
       if (!this._isSolid(tile)) continue;
 
-      // 🎯 HIT DA SOTTO (question block)
       if (
         side === "top" &&
         entity.velocity.y < 0 &&
@@ -95,7 +94,7 @@ export default class TileCollider {
     entity.velocity.y = 0;
   }
 
-  // ───────────────────────────── DEBUG MONETE ─────────────
+  // ───────────────────────────── DEBUG Coins ─────────────
   debugEntities() {
     for (const e of this.level.entities) {
       if (e.pos && e.isAlive && !e.isAlive()) {

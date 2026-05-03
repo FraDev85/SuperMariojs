@@ -154,21 +154,17 @@ export async function createMario() {
     mario.lastDeltaTime = deltaTime;
 
     if (mario.isPoweringUp) {
-      // 🧍 blocco movimento orizzontale
       mario.velocity.x = 0;
       mario.velocity.y = 0;
 
-      // incrementa il tempo power-up
       mario.powerUpTime += deltaTime;
 
-      // fine animazione power-up
       if (mario.powerUpTime > 1) {
         mario.isPoweringUp = false;
-        mario.isBig = true; // già grande, solo fine animazione
+        mario.isBig = true;
       }
     }
 
-    // ✅ update traits sempre attivo (fisica + collisioni)
     originalUpdate(deltaTime);
   };
 

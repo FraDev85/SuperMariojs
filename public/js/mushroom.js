@@ -45,18 +45,14 @@ export async function createMushroom() {
 
         if (this.emergeProgress >= 16) {
           this.emerging = false;
-          this.velocity.x = 60; // parte verso destra al termine dell'emersione
+          this.velocity.x = 60; 
         }
 
         return;
       }
 
-      // ⬇️ gravità — applicata qui; checkY nel game loop risolve la posizione
+     
       this.velocity.y += 1000 * deltaTime;
-
-      // ➡️ movimento orizzontale — checkX nel game loop chiama reverse() se colpisce un muro
-      // Non aggiorniamo position qui: ci pensa il tileCollider tramite checkX/checkY
-      // (il movimento effettivo della posizione avviene nelle chiamate check* in main.js)
     },
 
     // ── Draw ───────────────────────────────────────────────────────
@@ -64,7 +60,7 @@ export async function createMushroom() {
       sprites.draw("mushroom", ctx, this.position.x, this.position.y);
     },
 
-    // ── Raccolta ───────────────────────────────────────────────────
+    // ── Harvest───────────────────────────────────────────────────
     onCollect(mario) {
       if (!this.alive) return;
 
@@ -72,12 +68,12 @@ export async function createMushroom() {
       mario.powerUp();
     },
 
-    // ── Collisione muro → inverte direzione ────────────────────────
+    // ── reverse ────────────────────────
     reverse() {
       this.velocity.x *= -1;
     },
 
-    // ── Stato ──────────────────────────────────────────────────────
+    // ── State──────────────────────────────────────────────────────
     isAlive() {
       return this.alive;
     },

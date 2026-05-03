@@ -4,20 +4,20 @@ import { Matrix } from "./math.js";
 
 export default class Level {
   constructor() {
-    this.comp = new Compositor(); // gestisce i layer
-    this.entities = new Set(); // entità come Mario, nemici, ecc.
-    this.tiles = new Matrix(); // matrice delle tile (popolata dal loader)
-    this.tileCollider = null; // collider impostato dal loader
-    this.toSpawn = []; // entità da spawnare (es. monete da question block)
+    this.comp = new Compositor(); // Manage layer
+    this.entities = new Set(); // Entities like Mario or enemy
+    this.tiles = new Matrix(); // matrix 
+    this.tileCollider = null; 
+    this.toSpawn = []; 
   }
 
   update(deltaTime) {
-    // aggiorna tutte le entità
+    // update all entities
     this.entities.forEach((entity) => {
       if (entity.update) entity.update(deltaTime);
     });
 
-    // spawna le entità in coda (es. monete dai blocchi ?)
+    // spawn the entities
     for (const e of this.toSpawn) {
       this.entities.add(e);
     }
@@ -25,8 +25,7 @@ export default class Level {
   }
 
   /**
-   * Calcola la larghezza e altezza reale del livello in pixel
-   * basandosi sulle tile presenti nella matrice
+   *
    */
   getSize(tileSize = 16) {
     let maxX = 0;

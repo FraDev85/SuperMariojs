@@ -19,9 +19,8 @@ export async function loadDecorationSprites() {
   return decorSprites;
 }
 
-// ── Layer decorazioni ─────────────────────────────────────────────
-// Le decorazioni sono oggetti { type, x, y } definiti nel JSON.
-// Vengono disegnate PRIMA delle tile (sfondo) quindi non bloccano mai il gameplay.
+// ── Layer decoration ─────────────────────────────────────────────
+
 export function createDecorationLayer(
   decorations,
   sprites,

@@ -3,32 +3,32 @@ import { loadImage } from "./loader.js";
 import SpriteSheet from "./spriteSheet.js";
 import Animator from "./animator.js";
 
-// ── Caricamento sprite ─────────────────────────────────────────────
+// ── Load sprite ─────────────────────────────────────────────
 async function loadGoombaSprites() {
   const image = await loadImage("/img/sprites.png");
   const sprites = new SpriteSheet(image, 16, 16);
 
   sprites.define("walk1", 80,  0, 16, 16);
   sprites.define("walk2", 96,  0, 16, 16);
-  sprites.define("dead",  112, 0, 16, 16); // schiacciato
+  sprites.define("dead",  112, 0, 16, 16); 
 
   return sprites;
 }
 
-// ── Creazione Goomba ───────────────────────────────────────────────
+// ── Create Goomba ───────────────────────────────────────────────
 export async function createGoomba() {
   const sprites = await loadGoombaSprites();
   const walkAnim = new Animator(["walk1", "walk2"], 0.25);
 
   const goomba = {
     position: { x: 0, y: 0 },
-    velocity: { x: -60, y: 0 }, // cammina verso sinistra
+    velocity: { x: -60, y: 0 }, // 
     size:     { x: 16, y: 16 },
 
     alive:      true,
-    isGoomba:   true,   // flag per il game loop
-    dead:       false,  // schiacciato
-    deadTimer:  0,      // quanto resta visibile dopo la morte
+    isGoomba:   true,   
+    dead:       false,  
+    deadTimer:  0,     
 
     // ── Posizione ──────────────────────────────────────────────────
     setPosition(x, y) {
@@ -48,17 +48,17 @@ export async function createGoomba() {
 
       walkAnim.frame(deltaTime);
 
-      // Gravità interna (checkY in main.js applica la fisica)
+    
       this.velocity.y += 1000 * deltaTime;
     },
 
-    // ── Draw ───────────────────────────────────────────────────────
+   
     draw(ctx) {
       const frame = this.dead ? "dead" : walkAnim.frame(0);
       sprites.draw(frame, ctx, this.position.x, this.position.y);
     },
 
-    // ── Calpestato da Mario ────────────────────────────────────────
+    
     stomp() {
       if (this.dead) return;
       this.dead      = true;
@@ -67,12 +67,12 @@ export async function createGoomba() {
       this.velocity.y = 0;
     },
 
-    // ── Inverte direzione (muro o bordo) ──────────────────────────
+    // ── Reverse Direction──────────────────────────
     reverse() {
       this.velocity.x *= -1;
     },
 
-    // ── Stato ──────────────────────────────────────────────────────
+    // ── State──────────────────────────────────────────────────────
     isAlive() {
       return this.alive;
     },

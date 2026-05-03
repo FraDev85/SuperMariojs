@@ -29,7 +29,7 @@ export function checkCollision(entityA, entityB) {
 export default class Coin {
   constructor(x, y) {
     this.position = { x, y };
-    this.velocity = { x: 0, y: -150 }; // impulso iniziale verso l'alto
+    this.velocity = { x: 0, y: -150 }; // impulse f
     this.size = { x: 16, y: 16 };
     this.age = 0;
     this.lifetime = 1;
@@ -40,11 +40,11 @@ export default class Coin {
   update(deltaTime) {
     this.age += deltaTime;
 
-    // Gravità verso il basso
+    // gravity to down
     this.velocity.y += 400 * deltaTime;
     this.position.y += this.velocity.y * deltaTime;
 
-    // Animazione rotazione
+    // rotate ANIMATION
     this.frameTime += deltaTime;
     if (this.frameTime > 0.3) {
       this.frameTime = 0;
@@ -67,7 +67,7 @@ export default class Coin {
   onCollect(mario) {
     coinSound.currentTime = 0;
     coinSound.play();
-    // Notifica il game loop tramite callback su mario
+
     if (mario && mario._onCoinCollect) mario._onCoinCollect();
   }
 }

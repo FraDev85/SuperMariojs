@@ -20,15 +20,15 @@ export async function createKoopa() {
 
   const koopa = {
     position: { x: 0, y: 0 },
-    velocity: { x: -40, y: 0 }, // più lento del Goomba
-    size: { x: 16, y: 32 }, // alto 32px quando cammina
+    velocity: { x: -40, y: 0 }, 
+    size: { x: 16, y: 32 },
 
     alive: true,
-    isKoopa: true, // flag per main.js (fisica + collisioni)
+    isKoopa: true,
 
     // ── State machine: "walking" | "shell" | "sliding" ─────────────
     state: "walking",
-    shellTimer: 0, // Koopa riemerge dopo 5s se il guscio è fermo
+    shellTimer: 0, 
 
     setPosition(x, y) {
       this.position.x = x;
@@ -40,15 +40,14 @@ export async function createKoopa() {
 
       if (this.state === "walking") {
         walkAnim.frame(deltaTime);
-        this.velocity.y += 1000 * deltaTime; // gravità
+        this.velocity.y += 1000 * deltaTime; 
       } else if (this.state === "shell") {
-        // guscio fermo: conto alla rovescia prima di riemerge
         this.shellTimer -= deltaTime;
         if (this.shellTimer <= 0) {
           this._emerge();
         }
       } else if (this.state === "sliding") {
-        this.velocity.y += 1000 * deltaTime; // gravità anche da guscio
+        this.velocity.y += 1000 * deltaTime; 
       }
     },
 
@@ -66,24 +65,24 @@ export async function createKoopa() {
       ctx.restore();
     },
 
-    // ── Calpestato da Mario ────────────────────────────────────────
+    // ── stomp from Mario ────────────────────────────────────────
     stomp() {
       if (this.state === "walking") {
-        // prima calpestata → diventa guscio fermo
+      
         this._enterShell();
       } else if (this.state === "shell") {
-        // seconda calpestata su guscio fermo → lancia il guscio
+      
         this._kick();
       }
-      // se "sliding" non fa nulla (già in movimento, Mario rimbalza)
+     
     },
 
-    // ── Guscio colpisce Mario lateralmente ─────────────────────────
+    // ── shell hit Mario  ─────────────────────────
     hitsPlayer() {
       return this.state === "sliding";
     },
 
-    // ── Inverte direzione (muro) ───────────────────────────────────
+    // ── Reverse ───────────────────────────────────
     reverse() {
       this.velocity.x *= -1;
       this.facing = this.velocity.x < 0 ? -1 : 1;
@@ -93,13 +92,12 @@ export async function createKoopa() {
       return this.alive;
     },
 
-    // ── Privati ────────────────────────────────────────────────────
+   
     _enterShell() {
       this.state = "shell";
       this.velocity.x = 0;
-      this.shellTimer = 5; // 5 secondi prima di riemerge
-      this.size.y = 16; // hitbox ridotta a 16px nel guscio
-      // riallinea la base del Koopa (era alto 32, ora 16)
+      this.shellTimer = 5; 
+      this.size.y = 16; 
       this.position.y += 16;
     },
 
@@ -112,7 +110,6 @@ export async function createKoopa() {
       this.state = "walking";
       this.velocity.x = -40;
       this.facing = -1;
-      // ripristina hitbox alta, riallineando in basso
       this.position.y -= 16;
       this.size.y = 32;
     },
