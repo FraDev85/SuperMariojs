@@ -17,6 +17,32 @@
       ]
     }
   ],
+  "decorations": [
+    { "type": "cloud-big", "x": 64, "y": 28 },
+    { "type": "cloud-small", "x": 180, "y": 16 },
+    { "type": "cloud-big", "x": 340, "y": 36 },
+    { "type": "cloud-small", "x": 460, "y": 20 },
+    { "type": "cloud-big", "x": 600, "y": 24 },
+    { "type": "cloud-small", "x": 730, "y": 14 },
+    { "type": "cloud-big", "x": 860, "y": 32 },
+    { "type": "cloud-small", "x": 980, "y": 18 },
+    { "type": "cloud-big", "x": 1100, "y": 26 },
+    { "type": "cloud-small", "x": 1220, "y": 20 },
+    { "type": "bush", "x": 32, "y": 272 },
+    { "type": "bush", "x": 256, "y": 272 },
+    { "type": "bush", "x": 512, "y": 272 },
+    { "type": "bush", "x": 768, "y": 272 },
+    { "type": "bush", "x": 1024, "y": 272 },
+    { "type": "bush", "x": 128, "y": 272 },
+    { "type": "bush", "x": 160, "y": 272 },
+    { "type": "bush", "x": 384, "y": 272 },
+    { "type": "bush", "x": 416, "y": 272 },
+    { "type": "bush", "x": 640, "y": 272 },
+    { "type": "bush", "x": 672, "y": 272 },
+    { "type": "bush", "x": 896, "y": 272 },
+    { "type": "bush", "x": 928, "y": 272 },
+    { "type": "bush", "x": 928, "y": 272 }
+  ],
   "entities": [
     { "type": "questionBlock", "position": [192, 128], "content": "mushroom" },
     { "type": "questionBlock", "position": [352, 112] },
@@ -24,7 +50,7 @@
     { "type": "goomba", "position": [400, 174] },
     { "type": "goomba", "position": [600, 174] },
     { "type": "goomba", "position": [900, 174] },
-    { "type": "koopa",  "position": [500, 158] },
-    { "type": "koopa",  "position": [750, 158] }
+    { "type": "koopa", "position": [500, 158] },
+    { "type": "koopa", "position": [750, 158] }
   ]
 }

@@ -85,6 +85,11 @@ async function main() {
   );
   level.comp.layers.push((ctx) => backgroundLayer(ctx, camera));
 
+  // decorazioni (nuvole, alberi, cespugli) — sopra le tile, sotto gli sprite
+  if (level.decorationLayer) {
+    level.comp.layers.push((ctx) => level.decorationLayer(ctx, camera));
+  }
+
   const spriteLayer = createSpriteLayer(level.entities);
   level.comp.layers.push((ctx) => spriteLayer(ctx, camera));
 
@@ -206,21 +211,20 @@ async function main() {
         mario.jump.onGround  = false;
         mario.jump.isJumping = true;
 
-        // orienta il guscio nella direzione opposta a Mario
         if (entity.state === "sliding") {
           entity.facing = mario.position.x < entity.position.x ? 1 : -1;
         }
       } else {
-        // tocco laterale
-        if (entity.state === "sliding" || entity.state === "walking") {
+        if (entity.state === "shell") {
+          // calcia il guscio nella direzione opposta a Mario
+          entity.facing = mario.position.x < entity.position.x ? 1 : -1;
+          entity.stomp();
+          hud.addScore(400);
+        } else {
+          // tocco laterale con Koopa che cammina o guscio in corsa
           if (invincibleTimer > 0) continue;
           if (mario.isBig) shrinkMario();
           else killMario("koopa");
-        } else if (entity.state === "shell") {
-          // calcia il guscio nella direzione da cui arriva Mario
-          entity.facing = mario.position.x < entity.position.x ? 1 : -1;
-          entity.stomp(); // entra in "sliding"
-          hud.addScore(400);
         }
       }
     }
@@ -330,7 +334,6 @@ async function main() {
       if (entity.isKoopa) {
         if (!entity.alive) continue;
 
-        // guscio fermo: non si muove, solo timer
         if (entity.state !== "shell") {
           entity.position.x += entity.velocity.x * deltaTime;
           const prevVelX = entity.velocity.x;
@@ -354,7 +357,6 @@ async function main() {
 
             if (other.isGoomba) other.stomp();
             if (other.isKoopa) {
-              // due gusci che si scontrano si eliminano a vicenda
               other.alive = false;
               entity.alive = false;
             }

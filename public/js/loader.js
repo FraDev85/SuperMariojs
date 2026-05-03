@@ -6,6 +6,7 @@ import Coin from "./coin.js";
 import CoinStable from "./coinStable.js";
 import { createGoomba } from "./goomba.js";
 import { createKoopa } from "./koopa.js";
+import { loadDecorationSprites, createDecorationLayer } from "./decorations.js";
 
 // ── Carica immagine ───────────────────────────────────────────────
 export function loadImage(url) {
@@ -126,6 +127,11 @@ export async function loadLevel(name, playerEntity = null) {
   const level = new Level();
 
   level.backgroundSprites = await loadBackgroundSprites();
+
+  // ── Decorazioni (nuvole, alberi, cespugli) ────────────────────────
+  const decorSprites = await loadDecorationSprites();
+  const decorations  = levelSpec.decorations || [];
+  level.decorationLayer = createDecorationLayer(decorations, decorSprites);
 
   createTiles(level, levelSpec.backgrounds);
 
